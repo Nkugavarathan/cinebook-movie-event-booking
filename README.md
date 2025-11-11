@@ -21,7 +21,7 @@ This project demonstrates clean separation between the **frontend** and **backen
 | Layer | Technology |
 |------|------------|
 | Frontend | React.js, Axios, React Router |
-| Backend | Java, Spring Boot, Spring Web, Spring Data MongoDB |
+| Backend | Java, Spring Boot, Spring Web, Spring Data |
 | Database | MongoDB (Atlas / Local) |
 | Tools | Maven, Git, Node.js |
 
