@@ -12,5 +12,5 @@ public class MovieSummaryDTO {
     private String posterUrl;
     private String language;
     private String genre;
-    private int duration;
+    private double duration;
 }

@@ -24,6 +24,10 @@ public class Movie {
     private String posterUrl;
     private String trailerUrl;
 
+    private double duration;
+    private String genre;
+    private String language;
+
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
     private List<ShowTime> showTimes;
 }
