@@ -6,5 +6,5 @@ public class SeatDTO {
     private Long id;
     private int rowNumber;
     private int seatNumber;
-    private boolean available; // computed by backend
+    private boolean available;
 }
