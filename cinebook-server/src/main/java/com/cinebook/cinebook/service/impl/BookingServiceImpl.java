@@ -77,8 +77,6 @@ public class BookingServiceImpl implements BookingService {
 
         Booking saved = bookingRepo.save(booking);
 
-        // In a real flow, you'd now create a Stripe session and return client secret or session id.
-        // For now, we assume payment is done by external step -> we'll keep paymentSuccess=false.
 
         List<SeatDTO> seatDtos = seats.stream()
                 .map(s -> SeatDTO.builder()

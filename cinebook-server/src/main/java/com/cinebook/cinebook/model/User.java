@@ -21,17 +21,16 @@ public class User {
 
     private String password;
 
-//    @ManyToOne
-//    @JoinColumn(name = "role_id")
-//    private Role role;
-
     public enum Role {
         USER,
         ADMIN
     }
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role=Role.USER;
 }
 
 
 
+//    @ManyToOne
+//    @JoinColumn(name = "role_id")
+//    private Role role;
