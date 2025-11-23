@@ -29,7 +29,11 @@ const Navbar = () => {
           About
         </Link>
       </li> */}
+<<<<<<< HEAD
       {/* <li>
+=======
+      <li>
+>>>>>>> cinebook-frontend
         <Link
           to="/login"
           className="hover:text-[#FF5656] font-semibold transition duration-200"
@@ -38,6 +42,10 @@ const Navbar = () => {
           Login
         </Link>
       </li>
+<<<<<<< HEAD
+=======
+      {/*
+>>>>>>> cinebook-frontend
       <li>
         <Link
           to="/book"

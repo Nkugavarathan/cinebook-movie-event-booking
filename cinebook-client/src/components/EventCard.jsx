@@ -39,7 +39,11 @@ function EventCard({ event }) {
         </div>
 
         <button
+<<<<<<< HEAD
           className="w-full text-center inline-block 
+=======
+          className="cursor-pointer w-full text-center inline-block 
+>>>>>>> cinebook-frontend
                      bg-[#FF5656] hover:bg-[#CD2C58] text-white 
                      px-4 py-3 rounded-lg font-bold uppercase tracking-wider 
                      transition duration-300 transform hover:scale-[1.01] 
