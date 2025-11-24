@@ -1,8 +1,10 @@
-import React, { useState } from "react"
+import React, { useState, useContext } from "react"
 import { Link } from "react-router-dom"
 import { Menu, X } from "lucide-react" // Import the icons
-
+import { AuthContext } from "../context/AuthContext"
+import { logout } from "./../services/authService"
 const Navbar = () => {
+  const { token, logout } = useContext(AuthContext)
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleMenu = () => {
@@ -29,15 +31,25 @@ const Navbar = () => {
           About
         </Link>
       </li> */}
-      <li>
-        <Link
-          to="/login"
-          className="hover:text-[#FF5656] font-semibold transition duration-200"
-          onClick={() => setIsOpen(false)}
+      {token ? (
+        <p
+          onClick={logout}
+          className="hover:text-[#FF5656]font-semibold transition duration-200 cursor-pointer"
         >
-          Login
-        </Link>
-      </li>
+          Logout
+        </p>
+      ) : (
+        <li>
+          <Link
+            to="/login"
+            className="hover:text-[#FF5656] font-semibold transition duration-200"
+            onClick={() => setIsOpen(false)}
+          >
+            Login
+          </Link>
+        </li>
+      )}
+
       {/*
       <li>
         <Link
