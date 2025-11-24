@@ -67,4 +67,22 @@ public class TheaterServiceImpl implements TheaterService {
     public Theater createTheater(Theater theater) {
         return theaterRepo.save(theater);
     }
+//    @Override
+//    public TheaterDetailDTO updateTheater(Long id, TheaterDetailDTO dto) {
+//        Theater theater = theaterRepo.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Theater not found"));
+//
+//        theater.setName(dto.getName());
+//        theater.setCity(dto.getCity());
+//        theater.setAddress(dto.getAddress());
+//
+//        theaterRepo.save(theater);
+//        return
+//    }
+
+    @Override
+    public void deleteTheater(Long id) {
+        theaterRepo.deleteById(id);
+    }
+
 }

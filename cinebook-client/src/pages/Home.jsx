@@ -1,9 +1,24 @@
-import React from "react"
-
+import React, { useEffect, useState } from "react"
 import EventCard from "../components/EventCard"
 import MovieCard from "../components/MovieCard"
+import api from "../services/api"
 
 function Home() {
+  const [movie, setMovies] = useState([])
+  const [event, setEvents] = useState([])
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        const response = await api.get("/movies")
+        setMovies(response.data)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchMovie()
+  })
+
   const movies = [
     {
       id: 1,
@@ -97,7 +112,7 @@ function Home() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {movies.map((movie) => (
+          {movie.map((movie) => (
             <div
               key={movie.id}
               className="transform transition-all duration-300 hover:-translate-y-2"
