@@ -30,6 +30,3 @@ Admins can manage movies, events, theaters, and showtimes through a secure role-
 **Authentication:** JWT (JSON Web Token)  
 **APIs:** RESTful APIs
 
-
-   git clone https://github.com/yourusername/cinebook-movie-event-booking.git
-   cd cinebook-movie-event-booking/backend
