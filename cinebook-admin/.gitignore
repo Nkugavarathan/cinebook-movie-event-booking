@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # Vite cache
-cinebook-client/.vite/
+../cinebook-client/.vite/
+
