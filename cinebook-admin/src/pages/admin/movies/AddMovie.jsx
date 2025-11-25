@@ -17,7 +17,7 @@ export default function AddMovie() {
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    await api.post("/admin/movies", movie)
+    await api.post("/movies", movie)
     window.location.href = "/admin/movies"
   }
 

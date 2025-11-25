@@ -10,14 +10,14 @@ export default function EditMovie() {
   const [movie, setMovie] = useState(null)
 
   const loadMovie = async () => {
-    const res = await api.get(`/admin/movies/${id}`)
+    const res = await api.get(`/movies/${id}`)
     setMovie(res.data)
   }
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    await api.put(`/admin/movies/${id}`, movie)
-    window.location.href = "/admin/movies"
+    await api.put(`/movies/${id}`, movie)
+    window.location.href = "/movies"
   }
 
   useEffect(() => {

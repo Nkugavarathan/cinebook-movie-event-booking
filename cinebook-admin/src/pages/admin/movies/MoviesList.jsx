@@ -8,14 +8,14 @@ export default function MoviesList() {
   const [movies, setMovies] = useState([])
 
   const loadMovies = async () => {
-    const res = await api.get("/admin/movies")
+    const res = await api.get("/movies")
     setMovies(res.data)
   }
 
   const deleteMovie = async (id) => {
     if (!window.confirm("Delete this movie?")) return
 
-    await api.delete(`/admin/movies/${id}`)
+    await api.delete(`/movies/${id}`)
     loadMovies()
   }
 
