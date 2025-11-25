@@ -9,7 +9,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Admin Dashboard */}
+        {/* Admin Dashboard 
+        element={
+            <ProtectedAdminRoute>
+              <AdminDashboard />
+            </ProtectedAdminRoute>
+        */}
         <Route
           path="/admin/dashboard"
           element={

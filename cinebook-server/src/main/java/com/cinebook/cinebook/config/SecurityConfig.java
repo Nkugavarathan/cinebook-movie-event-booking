@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()     // Login, Register
                         .requestMatchers("/api/movies/**").permitAll()   // Public for users
+//                        .requestMatchers("/api/theaters/**").permitAll()   // Public for users
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // Only Admin
                         .anyRequest().authenticated()
                 )
