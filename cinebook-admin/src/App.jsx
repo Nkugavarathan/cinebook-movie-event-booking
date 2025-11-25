@@ -10,7 +10,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Admin Dashboard */}
-        <Routes
+        <Route
           path="/admin/dashboard"
           element={
             <ProtectedAdminRoute>
