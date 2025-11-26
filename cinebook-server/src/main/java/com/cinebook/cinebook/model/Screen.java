@@ -18,7 +18,10 @@ public class Screen {
     private Long id;
 
     private String screenName;
+    @Column(name = "total_rows")
     private int rows;
+
+    @Column(name = "total_columns")
     private int columns;
 
     @ManyToOne

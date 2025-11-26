@@ -25,8 +25,7 @@ public class SeatServiceImpl implements SeatService {
                 .rowNumber(s.getRowNumber())
                 .seatNumber(s.getSeatNumber())
                 .available(true)
-                .build()).collect(Collectors.toList());
-    }
+                .build()).collect(Collectors.toList());}
 
     @Override
     public List<Long> getBookedSeatIdsForShowtime(Long showTimeId) {

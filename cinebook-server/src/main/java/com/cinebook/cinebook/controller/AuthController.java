@@ -12,6 +12,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    //create new account
     @PostMapping("/signup")
     public AuthResponse signup(@RequestBody SignupRequest request) {
         return authService.signup(request);

@@ -1,11 +1,9 @@
 package com.cinebook.cinebook.controller;
 
-import com.cinebook.cinebook.dto.MovieDetailDTO;
 import com.cinebook.cinebook.dto.MovieSummaryDTO;
 import com.cinebook.cinebook.model.Movie;
 import com.cinebook.cinebook.service.MovieService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -14,6 +12,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovieController {
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     private final MovieService movieService;
 
     // public list for frontend browsing
@@ -24,8 +26,8 @@ public class MovieController {
 
     // aggregated detail incl. showtimes
     @GetMapping("/{id}")
-    public MovieDetailDTO getMovie(@PathVariable Long id) {
-        return movieService.getMovieDetail(id);
+    public Movie getMovie(@PathVariable Long id) {
+        return movieService.getMovieById(id);
     }
 
     // admin create
