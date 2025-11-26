@@ -1,7 +1,7 @@
 package com.cinebook.cinebook.controller;
 
 import com.cinebook.cinebook.model.ShowTime;
-import com.cinebook.cinebook.service.ShowTimeService;
+import com.cinebook.cinebook.service.ShowtimeService;
 //import com.cinebook.cinebook.service.ShowTimeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminShowTimeController {
 
-    private final ShowTimeService showTimeService;
+    private final ShowtimeService showTimeService;
 
     @PostMapping("/{movieId}/{screenId}")
     public ShowTime addShowTime(
