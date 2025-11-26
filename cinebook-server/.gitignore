@@ -37,3 +37,13 @@ src/main/resources/application.properties
 
 
 src/main/resources/.env
+
+# Ignore build output
+
+
+# Node/Vite frontend
+node_modules/
+.vite/
+
+# OS files
+.DS_Store
