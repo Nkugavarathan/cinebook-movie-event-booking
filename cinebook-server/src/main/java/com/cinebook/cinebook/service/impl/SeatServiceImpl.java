@@ -16,7 +16,22 @@ public class SeatServiceImpl implements SeatService {
 
     private final SeatRepository seatRepo;
     private final BookingRepository bookingRepo;
+    @Override
+    public List<SeatDTO> getSeatsForShowtime(Long screenId, Long showTimeId) {
 
+        List<Seat> seats = seatRepo.findByScreenId(screenId);
+        List<Long> bookedSeatIds = bookingRepo.findBookedSeatIdsByShowTime(showTimeId);
+
+        return seats.stream()
+                .map(s -> SeatDTO.builder()
+                        .id(s.getId())
+                        .rowNumber(s.getRowNumber())
+                        .seatNumber(s.getSeatNumber())
+                        .available(!bookedSeatIds.contains(s.getId())) // <- KEY
+                        .build()
+                )
+                .toList();
+    }
     @Override
     public List<SeatDTO> getSeatsForScreen(Long screenId) {
         List<Seat> seats = seatRepo.findByScreenId(screenId);

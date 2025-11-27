@@ -14,7 +14,7 @@ public interface MovieService {
 //    void deleteMovie(Long id);
 
     List<MovieSummaryDTO> listAllMovies();
-
+    public Movie getMovieById(Long id) ;
     MovieDetailDTO getMovieDetail(Long movieId);
 
     Movie createMovie(MovieRequestDTO dto);

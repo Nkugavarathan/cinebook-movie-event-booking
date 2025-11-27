@@ -8,5 +8,5 @@ public class BookingRequestDTO {
     private Long userId;
     private Long showTimeId;
     private List<Long> seatIds;
-    private double expectedAmount;
+//    private double expectedAmount;
 }

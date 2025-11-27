@@ -21,8 +21,13 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
+    @PostMapping
+    public BookingResponseDTO createBooking(@RequestBody BookingRequestDTO request) {
+        return bookingService.createBooking(request);
+    }
+
     @GetMapping("/{id}")
-    public BookingResponseDTO get(@PathVariable Long id) {
+    public BookingResponseDTO getBooking(@PathVariable Long id) {
         return bookingService.getBooking(id);
     }
 }

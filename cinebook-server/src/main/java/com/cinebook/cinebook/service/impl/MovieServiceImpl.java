@@ -21,6 +21,8 @@ public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepo;
     private final ShowTimeRepository showTimeRepo;
 
+
+
     @Override
     public List<MovieSummaryDTO> listAllMovies() {
         return movieRepo.findAll().stream()
@@ -112,6 +114,11 @@ public class MovieServiceImpl implements MovieService {
 //        movieRepo.deleteById(id);
 //    }
 
+    @Override
+    public Movie getMovieById(Long id) {
+        return movieRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
+    }
     @Override
     public Movie createMovie(MovieRequestDTO dto) {
         Movie movie = Movie.builder()
