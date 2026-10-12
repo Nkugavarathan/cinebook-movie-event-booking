@@ -53,6 +53,11 @@ public class Booking {
     private LocalDateTime confirmedAt;
     private LocalDateTime cancelledAt;
 
+    /** Who the ticket is for, entered at checkout (may differ from the account holder). */
+    private String contactName;
+    private String contactEmail;
+    private String contactPhone;
+
     private String stripeSessionId;
     private String stripePaymentIntentId;
     private String stripeRefundId;

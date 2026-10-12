@@ -1,6 +1,7 @@
 package com.cinebook.cinebook.controller;
 
 import com.cinebook.cinebook.dto.BookingResponseDTO;
+import com.cinebook.cinebook.dto.CheckoutRequest;
 import com.cinebook.cinebook.dto.CheckoutResponse;
 import com.cinebook.cinebook.dto.ConfirmPaymentRequest;
 import com.cinebook.cinebook.service.PaymentService;
@@ -30,8 +31,8 @@ public class PaymentController {
 
     /** Starts Stripe Checkout for a held booking and returns the hosted payment page URL. */
     @PostMapping("/checkout/{bookingId}")
-    public CheckoutResponse checkout(@PathVariable Long bookingId) {
-        return paymentService.createCheckout(bookingId);
+    public CheckoutResponse checkout(@PathVariable Long bookingId, @Valid @RequestBody CheckoutRequest contact) {
+        return paymentService.createCheckout(bookingId, contact);
     }
 
     /** Success page calls this; the server checks the session with Stripe before confirming. */

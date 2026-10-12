@@ -117,8 +117,30 @@ body {
   .no-print {
     display: none !important;
   }
+  /* Always print on white paper, whatever theme is on screen */
+  html,
+  html[data-theme] {
+    color-scheme: light;
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0f0f6;
+    --color-line: #d9d9e3;
+    --color-ink: #111118;
+    --color-muted: #4b4b5c;
+    --color-faint: #7a7a8c;
+  }
   body {
     background: white;
+  }
+  /* Print images and gradients exactly as on screen, even with "Background graphics" off */
+  .print-exact,
+  .print-exact * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-exact {
+    box-shadow: none !important;
+    break-inside: avoid;
   }
 }
 

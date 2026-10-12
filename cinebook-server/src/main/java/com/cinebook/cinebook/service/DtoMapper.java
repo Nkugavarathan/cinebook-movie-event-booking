@@ -78,6 +78,7 @@ public class DtoMapper {
                 showtime(b.getShowTime(), false),
                 b.getCreatedAt(), b.getExpiresAt(), b.getConfirmedAt(), b.getCancelledAt(),
                 u.getId(), u.getName(), u.getEmail(),
+                b.getContactName(), b.getContactEmail(), b.getContactPhone(),
                 b.getStripePaymentIntentId(), b.getStripeRefundId());
     }
 }

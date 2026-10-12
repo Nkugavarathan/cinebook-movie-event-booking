@@ -60,7 +60,7 @@ export default function BookingsList() {
         <div className="flex flex-wrap gap-2 border-b border-line p-4">
           <div className="relative min-w-60 flex-1 sm:max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
-            <input className="input pl-9" placeholder="Reference, customer or movie" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input className="input pl-9" placeholder="Reference, name, phone or show" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           <div className="flex flex-wrap gap-1 rounded-lg bg-surface-2 p-1">
             {STATUSES.map((s) => (
@@ -95,7 +95,10 @@ export default function BookingsList() {
                 {bookings.map((b) => (
                   <tr key={b.id} className="hover:bg-surface-2/40">
                     <td className="table-td font-mono text-xs font-semibold">{b.reference}</td>
-                    <td className="table-td"><p className="font-medium">{b.userName}</p><p className="text-xs text-muted">{b.userEmail}</p></td>
+                    <td className="table-td">
+                      <p className="font-medium">{b.contactName || b.userName}</p>
+                      <p className="text-xs text-muted">{b.contactPhone || b.userEmail}</p>
+                    </td>
                     <td className="table-td">
                       <p className="font-medium">{b.showtime.movieTitle}</p>
                       <p className="text-xs text-muted">{shortDate(b.showtime.showDate)} {time12(b.showtime.startTime)} · {b.showtime.theaterName}</p>
@@ -134,7 +137,10 @@ export default function BookingsList() {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <Row label="Status" value={<StatusBadge status={detail.status} />} />
             <Row label="Amount" value={money(detail.totalAmount, detail.currency)} />
-            <Row label="Customer" value={`${detail.userName} (${detail.userEmail})`} wide />
+            <Row label="Account" value={`${detail.userName} (${detail.userEmail})`} wide />
+            {detail.contactName && <Row label="Ticket holder" value={detail.contactName} />}
+            {detail.contactPhone && <Row label="Mobile" value={<a className="text-brand hover:underline" href={`tel:${detail.contactPhone}`}>{detail.contactPhone}</a>} />}
+            {detail.contactEmail && <Row label="Contact email" value={detail.contactEmail} wide />}
             <Row label="Movie" value={detail.showtime.movieTitle} wide />
             <Row label="Show" value={`${shortDate(detail.showtime.showDate)}, ${time12(detail.showtime.startTime)}`} />
             <Row label="Screen" value={`${detail.showtime.theaterName} · ${detail.showtime.screenName}`} />

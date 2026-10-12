@@ -22,6 +22,9 @@ public record BookingResponseDTO(
         Long userId,
         String userName,
         String userEmail,
+        String contactName,
+        String contactEmail,
+        String contactPhone,
         String stripePaymentIntentId,
         String stripeRefundId) {
 }

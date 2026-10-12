@@ -42,10 +42,11 @@ export default function MovieGrid({ movies, loading }) {
             </button>
           ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 lg:shrink-0">
           {languages.length > 2 && (
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="input w-auto py-2.5 text-sm">
-              {languages.map((l) => <option key={l}>{l}</option>)}
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} aria-label="Language"
+              className="input w-40 shrink-0 py-2.5 text-sm">
+              {languages.map((l) => <option key={l} value={l}>{l === "All" ? "All languages" : l}</option>)}
             </select>
           )}
           <div className="relative w-full lg:w-72">

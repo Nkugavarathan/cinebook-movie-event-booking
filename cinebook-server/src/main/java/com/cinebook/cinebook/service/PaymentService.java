@@ -1,6 +1,7 @@
 package com.cinebook.cinebook.service;
 
 import com.cinebook.cinebook.dto.BookingResponseDTO;
+import com.cinebook.cinebook.dto.CheckoutRequest;
 import com.cinebook.cinebook.dto.CheckoutResponse;
 import com.cinebook.cinebook.exception.ApiException;
 import com.cinebook.cinebook.model.*;
@@ -53,7 +54,7 @@ public class PaymentService {
     private String clientUrl;
 
     @Transactional
-    public CheckoutResponse createCheckout(Long bookingId) {
+    public CheckoutResponse createCheckout(Long bookingId, CheckoutRequest contact) {
         stripe.requireConfigured();
         User user = currentUser.require();
         Booking booking = bookingRepo.findByIdForUpdate(bookingId)
@@ -68,11 +69,22 @@ public class PaymentService {
             throw ApiException.conflict("Your seat hold has expired. Please select your seats again.");
         }
 
-        // Re-use an open session so double clicks don't create two payments.
+        String email = contact.email().trim().toLowerCase();
+        boolean contactChanged = !email.equals(booking.getContactEmail());
+        booking.setContactName(contact.name().trim());
+        booking.setContactEmail(email);
+        booking.setContactPhone(contact.phone().trim());
+
+        // Re-use an open session so double clicks don't create two payments
+        // (unless the email changed, since Stripe's receipt goes to the session email).
         if (booking.getStripeSessionId() != null) {
             Session existing = stripe.retrieveSession(booking.getStripeSessionId());
             if ("open".equals(existing.getStatus())) {
-                return new CheckoutResponse(existing.getUrl(), existing.getId());
+                if (!contactChanged) {
+                    bookingRepo.save(booking);
+                    return new CheckoutResponse(existing.getUrl(), existing.getId());
+                }
+                stripe.expireSessionQuietly(existing.getId());
             }
         }
 
@@ -91,7 +103,9 @@ public class PaymentService {
         long expiresAt = Instant.now().plusSeconds(SESSION_MINUTES * 60L + 30).getEpochSecond();
         SessionCreateParams.Builder params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setCustomerEmail(user.getEmail())
+                .setCustomerEmail(email)
+                .putMetadata("contactName", booking.getContactName())
+                .putMetadata("contactPhone", booking.getContactPhone())
                 .setClientReferenceId(String.valueOf(booking.getId()))
                 .putMetadata("bookingId", String.valueOf(booking.getId()))
                 .putMetadata("reference", booking.getReference())

@@ -41,7 +41,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    or lower(u.email) like lower(concat('%', :q, '%'))
                    or lower(u.name) like lower(concat('%', :q, '%'))
                    or lower(m.title) like lower(concat('%', :q, '%'))
-                   or lower(e.name) like lower(concat('%', :q, '%')))
+                   or lower(e.name) like lower(concat('%', :q, '%'))
+                   or lower(b.contactName) like lower(concat('%', :q, '%'))
+                   or lower(b.contactEmail) like lower(concat('%', :q, '%'))
+                   or b.contactPhone like concat('%', :q, '%'))
             order by b.createdAt desc
             """)
     List<Booking> search(@Param("status") BookingStatus status, @Param("q") String q, Pageable pageable);

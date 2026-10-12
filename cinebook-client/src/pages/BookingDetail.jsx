@@ -39,9 +39,9 @@ export default function BookingDetail() {
       </div>
 
       {/* Ticket */}
-      <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/40">
+      <div className="print-exact overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/40">
         <div className="relative h-40">
-          <Poster src={st.moviePosterUrl} title={st.movieTitle} className="h-full w-full object-top opacity-70" />
+          <Poster src={st.moviePosterUrl} title={st.movieTitle} eager className="h-full w-full object-top opacity-70 print:opacity-90" />
           <div className="absolute inset-0 bg-linear-to-t from-surface via-surface/40 to-transparent" />
           <div className="absolute bottom-4 left-5 right-5">
             <StatusBadge status={b.status} />
@@ -55,6 +55,9 @@ export default function BookingDetail() {
           <Field label="Cinema" value={st.theaterName} />
           <Field label="Screen" value={`${st.screenName}${st.format ? " · " + st.format : ""}`} />
           <Field label="Seats" value={b.seatLabels} wide />
+          {b.contactName && (
+            <Field label="Booked for" value={[b.contactName, b.contactPhone].filter(Boolean).join(" · ")} wide />
+          )}
         </div>
 
         {/* Perforation */}

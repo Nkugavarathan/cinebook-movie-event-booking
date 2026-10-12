@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Film } from "lucide-react"
 
 /** Movie poster with a graceful placeholder when the image is missing or broken. */
-export default function Poster({ src, title, className = "" }) {
+export default function Poster({ src, title, className = "", eager = false }) {
   const [failed, setFailed] = useState(false)
   if (!src || failed) {
     return (
@@ -12,5 +12,5 @@ export default function Poster({ src, title, className = "" }) {
       </div>
     )
   }
-  return <img src={src} alt={title} loading="lazy" onError={() => setFailed(true)} className={`object-cover ${className}`} />
+  return <img src={src} alt={title} loading={eager ? "eager" : "lazy"} onError={() => setFailed(true)} className={`object-cover ${className}`} />
 }
