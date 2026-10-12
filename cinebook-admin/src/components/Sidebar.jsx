@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom"
-import { Building2, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, Ticket, X } from "lucide-react"
+import { Building2, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, X } from "lucide-react"
 
 const NAV = [
   ["/admin/dashboard", "Dashboard", LayoutDashboard],
   ["/admin/movies", "Movies", Film],
-  ["/admin/theaters", "Theaters", Building2],
+  ["/admin/events", "Events", PartyPopper],
+  ["/admin/theaters", "Theaters & venues", Building2],
   ["/admin/screens", "Screens & Seats", MonitorPlay],
   ["/admin/showtimes", "Showtimes", CalendarClock],
   ["/admin/bookings", "Bookings", Ticket],

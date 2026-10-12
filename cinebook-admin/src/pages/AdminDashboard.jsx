@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     ["Confirmed bookings", d.confirmedBookings, Ticket, "text-brand bg-brand-soft"],
     ["Tickets sold", d.ticketsSold, Users, "text-violet-600 bg-violet-50"],
     ["Awaiting payment", d.pendingBookings, Clock, "text-amber-600 bg-amber-50"],
-    ["Active movies", d.activeMovies, Film, "text-sky-600 bg-sky-50"],
+    ["Movies / events live", `${d.activeMovies} / ${d.activeEvents}`, Film, "text-sky-600 bg-sky-50"],
     ["Theaters / screens", `${d.theaters} / ${d.screens}`, Building2, "text-slate-600 bg-slate-100"],
     ["Upcoming showtimes", d.upcomingShowtimes, CalendarClock, "text-indigo-600 bg-indigo-50"],
     ["Registered users", d.users, Users, "text-pink-600 bg-pink-50"],
@@ -52,17 +52,17 @@ export default function AdminDashboard() {
         <RevenueChart days={d.last7Days} currency={d.currency} />
 
         <div className="card p-5">
-          <h2 className="font-semibold">Top movies</h2>
+          <h2 className="font-semibold">Top sellers</h2>
           <p className="text-xs text-muted">By confirmed revenue</p>
           <div className="mt-4 space-y-3">
             {d.topMovies.length === 0 && <p className="py-6 text-center text-sm text-muted">No sales yet.</p>}
             {d.topMovies.map((m, i) => (
-              <div key={m.movieId} className="flex items-center gap-3">
+              <div key={`${m.kind}-${m.id}`} className="flex items-center gap-3">
                 <span className="w-4 text-sm font-bold text-faint">{i + 1}</span>
                 {m.posterUrl ? <img src={m.posterUrl} alt="" className="h-12 w-8 rounded object-cover" /> : <div className="h-12 w-8 rounded bg-surface-2" />}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{m.title}</p>
-                  <p className="text-xs text-muted">{m.tickets} tickets</p>
+                  <p className="text-xs text-muted">{m.kind === "EVENT" ? "Event" : "Movie"} · {m.tickets} tickets</p>
                 </div>
                 <span className="text-sm font-semibold tabular-nums">{money(m.revenue, d.currency)}</span>
               </div>
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
               <tr>
                 <th className="table-th">Reference</th>
                 <th className="table-th">Customer</th>
-                <th className="table-th">Movie</th>
+                <th className="table-th">Show</th>
                 <th className="table-th">Seats</th>
                 <th className="table-th">Amount</th>
                 <th className="table-th">Status</th>

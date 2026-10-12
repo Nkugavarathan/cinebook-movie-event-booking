@@ -10,7 +10,7 @@ const BRUSHES = [
   ["STANDARD", "Standard", Armchair, "bg-slate-200 text-slate-700"],
   ["PREMIUM", "Premium", Sparkles, "bg-violet-200 text-violet-800"],
   ["VIP", "VIP", Crown, "bg-amber-200 text-amber-800"],
-  ["GAP", "Gap / aisle", Eraser, "bg-white border border-dashed border-slate-300 text-slate-500"],
+  ["GAP", "Gap / aisle", Eraser, "bg-surface border border-dashed border-slate-300 text-slate-500"],
 ]
 const FORMATS = ["2D", "3D", "IMAX", "4DX", "Dolby Atmos"]
 

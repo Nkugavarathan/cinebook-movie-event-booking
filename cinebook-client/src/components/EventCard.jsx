@@ -36,7 +36,7 @@ export default function EventCard({ event }) {
           <span className="text-sm">
             {event.fromPrice != null ? (
               <><span className="text-muted">From </span><span className="font-semibold">{money(event.fromPrice, event.currency)}</span></>
-            ) : <span className="text-faint">—</span>}
+            ) : <span className="text-faint">-</span>}
           </span>
           <span className="rounded-lg bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand transition group-hover:bg-brand group-hover:text-white">
             Book now

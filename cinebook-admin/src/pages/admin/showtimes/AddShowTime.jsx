@@ -18,6 +18,8 @@ export default function AddShowTime() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const [movies, setMovies] = useState([])
+  const [events, setEvents] = useState([])
+  const [kind, setKind] = useState(params.get("eventId") ? "EVENT" : "MOVIE")
   const [theaters, setTheaters] = useState([])
   const [screens, setScreens] = useState([])
   const [saving, setSaving] = useState(false)
@@ -25,6 +27,7 @@ export default function AddShowTime() {
 
   const [form, setForm] = useState({
     movieId: params.get("movieId") || "",
+    eventId: params.get("eventId") || "",
     theaterId: "",
     screenId: "",
     showDate: todayIso(),
@@ -36,6 +39,7 @@ export default function AddShowTime() {
 
   useEffect(() => {
     api.get("/movies").then((res) => setMovies(res.data.filter((m) => m.active))).catch(() => {})
+    api.get("/events").then((res) => setEvents(res.data.filter((e) => e.active))).catch(() => {})
     api.get("/theaters").then((res) => setTheaters(res.data)).catch(() => {})
   }, [])
 
@@ -47,7 +51,13 @@ export default function AddShowTime() {
     }
   }
 
-  const movie = useMemo(() => movies.find((m) => String(m.id) === String(form.movieId)), [movies, form.movieId])
+  // The movie or event being scheduled; only its duration matters here.
+  const listing = useMemo(
+    () => kind === "MOVIE"
+      ? movies.find((m) => String(m.id) === String(form.movieId))
+      : events.find((e) => String(e.id) === String(form.eventId)),
+    [kind, movies, events, form.movieId, form.eventId]
+  )
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   const addTime = (t) => {
@@ -63,7 +73,8 @@ export default function AddShowTime() {
     setSaving(true)
     try {
       const res = await api.post("/showtimes", {
-        movieId: Number(form.movieId),
+        movieId: kind === "MOVIE" ? Number(form.movieId) : null,
+        eventId: kind === "EVENT" ? Number(form.eventId) : null,
         screenId: Number(form.screenId),
         showDate: form.showDate,
         startTimes: form.startTimes,
@@ -84,19 +95,39 @@ export default function AddShowTime() {
   return (
     <form onSubmit={submit} className="max-w-3xl">
       <Link to="/admin/showtimes" className="mb-4 inline-flex items-center gap-1 text-sm text-muted hover:text-ink"><ArrowLeft size={15} /> Showtimes</Link>
-      <PageHeader title="Schedule showtimes" subtitle="Add one or more start times for a movie on a screen. Overlapping shows are rejected automatically." />
+      <PageHeader title="Schedule showtimes" subtitle="Add one or more start times for a movie or event on a screen / hall. Overlapping shows are rejected automatically." />
 
       <div className="card space-y-6 p-6">
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="label" htmlFor="movie">Movie *</label>
-            <select id="movie" className="input" required value={form.movieId} onChange={set("movieId")}>
-              <option value="">Select movie</option>
-              {movies.map((m) => <option key={m.id} value={m.id}>{m.title} ({m.duration} min)</option>)}
-            </select>
+            <div className="mb-3 inline-flex rounded-lg bg-surface-2 p-1">
+              {[["MOVIE", "Movie"], ["EVENT", "Event"]].map(([k, label]) => (
+                <button key={k} type="button" onClick={() => setKind(k)}
+                  className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${kind === k ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {kind === "MOVIE" ? (
+              <>
+                <label className="label" htmlFor="movie">Movie *</label>
+                <select id="movie" className="input" required value={form.movieId} onChange={set("movieId")}>
+                  <option value="">Select movie</option>
+                  {movies.map((m) => <option key={m.id} value={m.id}>{m.title} ({m.duration} min)</option>)}
+                </select>
+              </>
+            ) : (
+              <>
+                <label className="label" htmlFor="event">Event *</label>
+                <select id="event" className="input" required value={form.eventId} onChange={set("eventId")}>
+                  <option value="">Select event</option>
+                  {events.map((e) => <option key={e.id} value={e.id}>{e.name} - {e.category} ({e.duration} min)</option>)}
+                </select>
+              </>
+            )}
           </div>
           <div>
-            <label className="label" htmlFor="theater">Theater *</label>
+            <label className="label" htmlFor="theater">Theater / venue *</label>
             <select id="theater" className="input" required value={form.theaterId}
               onChange={(e) => chooseTheater(e.target.value)}>
               <option value="">Select theater</option>
@@ -104,7 +135,7 @@ export default function AddShowTime() {
             </select>
           </div>
           <div>
-            <label className="label" htmlFor="screen">Screen *</label>
+            <label className="label" htmlFor="screen">Screen / hall *</label>
             <select id="screen" className="input" required value={form.screenId} onChange={set("screenId")} disabled={!form.theaterId}>
               <option value="">{form.theaterId && screens.length === 0 ? "No screens in this theater" : "Select screen"}</option>
               {screens.map((s) => <option key={s.id} value={s.id}>{s.screenName} · {s.format} · {s.activeSeats} seats</option>)}
@@ -122,7 +153,7 @@ export default function AddShowTime() {
             {form.startTimes.map((t) => (
               <span key={t} className="inline-flex items-center gap-2 rounded-lg bg-brand-soft py-1.5 pl-3 pr-1.5 text-sm font-semibold text-brand">
                 {time12(t)}
-                {movie && <span className="font-normal text-brand/70">→ {time12(addMinutes(t, movie.duration))}</span>}
+                {listing && <span className="font-normal text-brand/70">→ {time12(addMinutes(t, listing.duration))}</span>}
                 <button type="button" onClick={() => removeTime(t)} className="rounded p-0.5 hover:bg-brand/10" aria-label={`Remove ${t}`}><X size={14} /></button>
               </span>
             ))}

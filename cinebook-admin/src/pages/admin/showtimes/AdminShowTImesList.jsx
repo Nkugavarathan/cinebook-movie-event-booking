@@ -10,8 +10,9 @@ import { money, shortDate, time12 } from "../../../lib/format"
 export default function AdminShowTimesList() {
   const [showTimes, setShowTimes] = useState(null)
   const [movies, setMovies] = useState([])
+  const [events, setEvents] = useState([])
   const [theaters, setTheaters] = useState([])
-  const [filters, setFilters] = useState({ movieId: "", theaterId: "", date: "" })
+  const [filters, setFilters] = useState({ kind: "", movieId: "", eventId: "", theaterId: "", date: "" })
   const [toDelete, setToDelete] = useState(null)
   const [busy, setBusy] = useState(false)
   const [occupancy, setOccupancy] = useState(null)
@@ -28,6 +29,7 @@ export default function AdminShowTimesList() {
 
   useEffect(() => {
     api.get("/movies").then((res) => setMovies(res.data)).catch(() => {})
+    api.get("/events").then((res) => setEvents(res.data)).catch(() => {})
     api.get("/theaters").then((res) => setTheaters(res.data)).catch(() => {})
   }, [])
 
@@ -70,17 +72,31 @@ export default function AdminShowTimesList() {
 
       <div className="card overflow-hidden">
         <div className="flex flex-wrap gap-2 border-b border-line p-4">
-          <select className="input w-auto" value={filters.movieId} onChange={(e) => setFilters({ ...filters, movieId: e.target.value })}>
-            <option value="">All movies</option>
-            {movies.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
+          <select className="input w-auto" value={filters.kind}
+            onChange={(e) => setFilters({ ...filters, kind: e.target.value, movieId: "", eventId: "" })}>
+            <option value="">Movies & events</option>
+            <option value="MOVIE">Movies only</option>
+            <option value="EVENT">Events only</option>
           </select>
+          {filters.kind !== "EVENT" && (
+            <select className="input w-auto" value={filters.movieId} onChange={(e) => setFilters({ ...filters, movieId: e.target.value })}>
+              <option value="">All movies</option>
+              {movies.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
+            </select>
+          )}
+          {filters.kind !== "MOVIE" && (
+            <select className="input w-auto" value={filters.eventId} onChange={(e) => setFilters({ ...filters, eventId: e.target.value })}>
+              <option value="">All events</option>
+              {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+            </select>
+          )}
           <select className="input w-auto" value={filters.theaterId} onChange={(e) => setFilters({ ...filters, theaterId: e.target.value })}>
             <option value="">All theaters</option>
             {theaters.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <input type="date" className="input w-auto" value={filters.date} onChange={(e) => setFilters({ ...filters, date: e.target.value })} />
           {hasFilters && (
-            <button className="btn-secondary" onClick={() => setFilters({ movieId: "", theaterId: "", date: "" })}><X size={15} /> Clear</button>
+            <button className="btn-secondary" onClick={() => setFilters({ kind: "", movieId: "", eventId: "", theaterId: "", date: "" })}><X size={15} /> Clear</button>
           )}
         </div>
 
@@ -93,7 +109,7 @@ export default function AdminShowTimesList() {
             <table className="w-full">
               <thead className="border-b border-line bg-surface-2/60">
                 <tr>
-                  <th className="table-th">Movie</th>
+                  <th className="table-th">Movie / event</th>
                   <th className="table-th">When</th>
                   <th className="table-th">Where</th>
                   <th className="table-th">Prices (Std / Prem / VIP)</th>
@@ -110,7 +126,13 @@ export default function AdminShowTimesList() {
                       <td className="table-td">
                         <div className="flex items-center gap-3">
                           {st.moviePosterUrl && <img src={st.moviePosterUrl} alt="" className="h-10 w-7 rounded object-cover" />}
-                          <span className="font-semibold">{st.movieTitle}</span>
+                          <div>
+                            <span className="font-semibold">{st.movieTitle}</span>
+                            <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                              st.kind === "EVENT" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>
+                              {st.kind === "EVENT" ? st.category || "Event" : "Movie"}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="table-td whitespace-nowrap">

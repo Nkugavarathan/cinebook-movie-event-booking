@@ -6,6 +6,8 @@ import AdminDashboard from "./pages/AdminDashboard"
 import MoviesList from "./pages/admin/movies/MoviesList"
 import AddMovie from "./pages/admin/movies/AddMovie"
 import EditMovie from "./pages/admin/movies/EditMovie"
+import EventsList from "./pages/admin/events/EventsList"
+import EventEditor from "./pages/admin/events/EventEditor"
 import TheaterList from "./pages/admin/Theaters/TheaterList"
 import EditTheater from "./pages/admin/Theaters/EditTheater"
 import AdminScreensList from "./pages/admin/screens/AdminScreensList"
@@ -25,6 +27,9 @@ export default function App() {
             <Route path="/admin/movies" element={<MoviesList />} />
             <Route path="/admin/movies/add" element={<AddMovie />} />
             <Route path="/admin/movies/edit/:id" element={<EditMovie />} />
+            <Route path="/admin/events" element={<EventsList />} />
+            <Route path="/admin/events/add" element={<EventEditor />} />
+            <Route path="/admin/events/edit/:id" element={<EventEditor />} />
             <Route path="/admin/theaters" element={<TheaterList />} />
             <Route path="/admin/theaters/:id" element={<EditTheater />} />
             <Route path="/admin/screens" element={<AdminScreensList />} />

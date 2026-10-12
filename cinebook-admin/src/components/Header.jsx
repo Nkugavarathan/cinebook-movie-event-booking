@@ -1,9 +1,11 @@
-import { LogOut, Menu } from "lucide-react"
+import { LogOut, Menu, Moon, Sun } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import { useTheme } from "../context/ThemeContext"
 
 export default function AdminHeader({ onMenu }) {
   const { user, logout } = useAuth()
+  const { theme, toggle } = useTheme()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -18,7 +20,11 @@ export default function AdminHeader({ onMenu }) {
       </button>
       <div className="hidden lg:block" />
       <div className="flex items-center gap-3">
-        <div className="text-right">
+        <button onClick={toggle} className="btn-icon" title={theme === "dark" ? "Light mode" : "Dark mode"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        <div className="hidden text-right sm:block">
           <p className="text-sm font-semibold leading-tight">{user?.name}</p>
           <p className="text-xs text-muted">{user?.email}</p>
         </div>

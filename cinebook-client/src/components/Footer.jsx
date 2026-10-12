@@ -20,6 +20,7 @@ export default function Footer() {
           <h4 className="text-sm font-semibold">Explore</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted">
             <li><Link className="hover:text-ink" to="/movies">Now showing</Link></li>
+            <li><Link className="hover:text-ink" to="/events">Events</Link></li>
             <li><Link className="hover:text-ink" to="/bookings">My tickets</Link></li>
           </ul>
         </div>

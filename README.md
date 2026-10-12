@@ -1,6 +1,6 @@
 # 🎬 CineBook – Movie Ticket Booking Platform
 
-CineBook is a full-stack cinema booking system: customers browse movies, pick seats on a live seat map, pay with **Stripe Checkout** and get a QR e-ticket. Admins manage movies, theaters, screen seat layouts, showtimes and bookings (including refunds) from a separate dashboard.
+CineBook is a full-stack cinema and live-events booking system: customers browse movies and events (concerts, comedy, theatre...), pick seats on a live seat map, pay with **Stripe Checkout** and get a QR e-ticket. Admins manage movies, theaters, screen seat layouts, showtimes and bookings (including refunds) from a separate dashboard.
 
 | App | Path | URL | Stack |
 |---|---|---|---|
@@ -14,6 +14,8 @@ CineBook is a full-stack cinema booking system: customers browse movies, pick se
 
 **Customers**
 - Browse, search and filter movies by genre and language; trailer playback
+- **Events** (concerts, comedy, theatre, kids...) with category filters, dates per venue and reserved seating
+- **Light / dark mode** toggle (remembered per browser; follows the system setting by default)
 - Showtimes grouped by date and cinema, with live "seats left"
 - Interactive seat map with Standard / Premium / VIP pricing, aisles, held and sold seats (refreshes every 15 s)
 - Seats are **held for 10 minutes** while you pay; the countdown is shown at checkout
@@ -21,7 +23,9 @@ CineBook is a full-stack cinema booking system: customers browse movies, pick se
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
 
 **Admins**
-- Dashboard: revenue, tickets sold, 7-day revenue chart, top movies, recent bookings
+- Dashboard: revenue, tickets sold, 7-day revenue chart, top sellers (movies and events), recent bookings
+- Events CRUD; schedule event dates on a venue hall exactly like movie showtimes
+- Light / dark mode toggle
 - Movies CRUD (poster preview, active/hidden flag)
 - Theaters CRUD, with each theater's screens
 - **Seat layout designer**: set rows × seats, paint seat types per seat/row/column, mark gaps and aisles
@@ -70,6 +74,9 @@ sequenceDiagram
     API->>DB: already CONFIRMED -> no-op; event id stored to ignore duplicates
 ```
 
+### Movies and events share one booking engine
+A `ShowTime` points to either a `Movie` or an `Event` and to a `Screen` (a cinema screen or a venue hall, each with its own seat layout). Seat holds, Stripe checkout, refunds and QR tickets therefore work the same for both. Venues are created under **Theaters & venues**.
+
 ### How double booking is prevented
 - Each held or booked seat is a `booking_seat` row with `locked = TRUE`. The unique key `(show_time_id, seat_id, locked)` means only one live booking can own a seat. Released rows get `locked = NULL`, and NULLs never collide, so history is kept.
 - Two people clicking the same seat at the same moment: one insert wins and the other gets **HTTP 409** ("seat was just taken"). Tested with 8 parallel requests: 1 success, 7 conflicts.
@@ -93,6 +100,8 @@ sequenceDiagram
 - A Stripe account (test mode)
 
 ### 1. Server
+Only the Stripe **secret** key is needed. Checkout is hosted by Stripe, so the publishable key is never used.
+
 ```bash
 cd cinebook-server
 cp .env.example .env        # then edit .env
@@ -101,7 +110,7 @@ mvn spring-boot:run
 `.env` (gitignored):
 ```properties
 STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...   # optional locally, see below
+STRIPE_WEBHOOK_SECRET=            # optional locally, see below (leave empty if unused)
 APP_CURRENCY=usd                  # or lkr, inr, eur...
 DB_USERNAME=root
 DB_PASSWORD=
@@ -110,6 +119,8 @@ JWT_SECRET=a-long-random-string-of-32+-characters
 On first start the server:
 - creates the admin account **admin@cinebook.com / Admin@123** (change it with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
 - seeds demo data (6 movies, 2 theaters, 3 screens, about 60 showtimes over the next 6 days) if there are no movies. Disable with `SEED_DEMO_DATA=false`.
+
+> Upgrading an existing database from before events were added: run `ALTER TABLE show_time MODIFY movie_id BIGINT NULL;` once (Hibernate's auto-update adds new columns but doesn't relax NOT NULL).
 
 > `src/main/resources/application.properties` is listed in `.gitignore`. It no longer contains secrets (they come from `.env`), so you can commit it if you want others to be able to run the project.
 
@@ -153,7 +164,9 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/movies?search=&genre=&language=` | Active movies |
 | GET | `/api/movies/{id}` | Movie + upcoming showtimes (with seats left) |
 | GET | `/api/theaters`, `/api/theaters/{id}` | Theaters |
-| GET | `/api/showtimes/{id}` | Showtime details |
+| GET | `/api/events?category=&search=` | Active events with next date, starting price and venues |
+| GET | `/api/events/{id}` | Event + upcoming performances |
+| GET | `/api/showtimes/{id}` | Showtime details (`kind` = `MOVIE` or `EVENT`) |
 | GET | `/api/showtimes/{id}/seats` | Seat map: each seat's type, price and `AVAILABLE` / `HELD` / `BOOKED` status |
 | GET | `/api/payments/config` | Whether Stripe is configured |
 | POST | `/api/payments/webhook` | Stripe webhook (signature verified) |
@@ -175,11 +188,13 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/admin/dashboard` | KPIs, 7-day revenue, top movies, recent bookings |
 | GET/POST | `/api/admin/movies` | List / create |
 | GET/PUT/DELETE | `/api/admin/movies/{id}` | Read / update / delete (refused if it has bookings) |
+| GET/POST | `/api/admin/events` | List / create |
+| GET/PUT/DELETE | `/api/admin/events/{id}` | Read / update / delete (refused if it has bookings) |
 | GET/POST | `/api/admin/theaters` | List / create |
 | GET/PUT/DELETE | `/api/admin/theaters/{id}` | Read / update / delete |
 | GET/POST | `/api/admin/screens?theaterId=` | List / create with seat layout |
 | GET/PUT/DELETE | `/api/admin/screens/{id}` | Layout / update (resizing is blocked once showtimes exist) / delete |
-| GET/POST | `/api/admin/showtimes?movieId=&theaterId=&date=` | List / create several start times (clash-checked) |
+| GET/POST | `/api/admin/showtimes?kind=&movieId=&eventId=&theaterId=&date=` | List / create several start times for a movie **or** event (`movieId` or `eventId`; clash-checked) |
 | GET | `/api/admin/showtimes/{id}/seats` | Occupancy |
 | DELETE | `/api/admin/showtimes/{id}` | Delete (refused if it has bookings) |
 | GET | `/api/admin/bookings?status=&q=` | Search bookings |
@@ -194,6 +209,7 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 erDiagram
     USERS ||--o{ BOOKING : places
     MOVIES ||--o{ SHOW_TIME : "is shown in"
+    EVENTS ||--o{ SHOW_TIME : "is performed in"
     THEATER ||--o{ SCREEN : has
     SCREEN ||--o{ SEAT : contains
     SCREEN ||--o{ SHOW_TIME : hosts
