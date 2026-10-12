@@ -33,7 +33,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - **Seat layout designer**: set rows × seats, paint seat types per seat/row/column, mark gaps and aisles
 - Showtimes: schedule several start times at once, with per-tier prices and automatic clash detection (movie runtime + 15 min turnaround), plus a seat occupancy view
 - Bookings: search and filter, view details, cancel a hold, or **cancel and refund through Stripe**
-- **Users**: search customers and admins, see each person's bookings and spend, add accounts, make or remove admins, block / unblock (blocked users can't sign in), reset passwords, delete accounts without bookings. Admins can't block, demote or delete themselves, and the last admin can never be removed
+- **Users**: search customers and admins, see each person's bookings and spend, make or remove admins, block / unblock (blocked users can't sign in), delete accounts without bookings. Admins never see or set passwords - customers sign up themselves. Admins can't block, demote or delete themselves, and the last admin can never be removed
 
 ---
 
@@ -218,8 +218,7 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/admin/users?q=&role=&blocked=` | Users with confirmed-booking count, total spent, last booking |
 | GET | `/api/admin/users/summary` | Totals: users, admins, blocked, new this week |
 | GET | `/api/admin/users/{id}` | User + their recent bookings |
-| POST | `/api/admin/users` | Create a customer or admin account `{name,email,password,role}` |
-| PATCH | `/api/admin/users/{id}` | Change any of `{name, role, blocked, password}` |
+| PATCH | `/api/admin/users/{id}` | Change any of `{name, role, blocked}` |
 | DELETE | `/api/admin/users/{id}` | Delete (refused if the user has bookings, or for yourself / the last admin) |
 
 ---

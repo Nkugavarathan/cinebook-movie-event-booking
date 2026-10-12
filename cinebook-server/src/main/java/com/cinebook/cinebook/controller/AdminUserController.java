@@ -37,13 +37,7 @@ public class AdminUserController {
         return userService.get(id);
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public AdminUserDTO create(@Valid @RequestBody CreateUserRequest request) {
-        return userService.create(request);
-    }
-
-    /** Change name, role, blocked state or password (only the fields sent). */
+    /** Change name, role or blocked state (only the fields sent). */
     @PatchMapping("/{id}")
     public AdminUserDTO update(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
         return userService.update(id, request);

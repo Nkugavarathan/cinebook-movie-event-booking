@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
-import { Ban, Eye, KeyRound, Plus, Search, ShieldCheck, ShieldOff, Trash2, UserCheck, UserPlus, Users, UserX } from "lucide-react"
+import { Ban, Eye, Search, ShieldCheck, ShieldOff, Trash2, UserCheck, UserPlus, Users, UserX } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../../../api/axios"
 import { ConfirmDialog, Empty, PageHeader, TableSkeleton } from "../../../components/ui"
 import { dateTime, money } from "../../../lib/format"
-import { AddUserDialog, Avatar, ResetPasswordDialog, RoleBadge, UserDetailDialog, UserStatus } from "./UserDialogs"
+import { Avatar, RoleBadge, UserDetailDialog, UserStatus } from "./UserDialogs"
 
 const FILTERS = [
   ["all", "All", {}],
@@ -19,9 +19,7 @@ export default function UsersList() {
   const [filter, setFilter] = useState("all")
   const [query, setQuery] = useState("")
   const [debounced, setDebounced] = useState("")
-  const [adding, setAdding] = useState(false)
   const [viewing, setViewing] = useState(null)
-  const [resetting, setResetting] = useState(null)
   const [confirm, setConfirm] = useState(null) // { user, action }
   const [busy, setBusy] = useState(false)
 
@@ -88,8 +86,7 @@ export default function UsersList() {
     <div>
       <PageHeader
         title="Users"
-        subtitle="Customers and admin accounts."
-        actions={<button onClick={() => setAdding(true)} className="btn-primary"><Plus size={16} /> Add user</button>}
+        subtitle="Customer accounts and their booking activity. Customers sign up and manage their own passwords."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -175,7 +172,6 @@ export default function UsersList() {
                             )}
                           </>
                         )}
-                        <button className="btn-icon" title="Reset password" onClick={() => setResetting(u)}><KeyRound size={17} /></button>
                         {!u.self && (
                           <button className="btn-icon hover:text-red-600!" title="Delete" onClick={() => setConfirm({ user: u, action: "delete" })}><Trash2 size={17} /></button>
                         )}
@@ -189,8 +185,6 @@ export default function UsersList() {
         )}
       </div>
 
-      {adding && <AddUserDialog open onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load() }} />}
-      {resetting && <ResetPasswordDialog user={resetting} onClose={() => setResetting(null)} />}
       {viewing && <UserDetailDialog key={viewing} userId={viewing} onClose={closeViewing} />}
       <ConfirmDialog
         open={!!confirm}

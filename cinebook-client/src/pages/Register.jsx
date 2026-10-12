@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { useAuth } from "../context/AuthContext"
 import { errorMessage } from "../services/api"
 import AuthLayout from "../components/AuthLayout"
+import PasswordInput from "../components/PasswordInput"
 import { Spinner } from "../components/ui"
 
 export default function Register() {
@@ -49,7 +50,7 @@ export default function Register() {
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">Password</span>
-          <input type="password" required minLength={6} autoComplete="new-password" className="input" placeholder="At least 6 characters"
+          <PasswordInput required minLength={6} autoComplete="new-password" className="input" placeholder="At least 6 characters"
             value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
         </label>
         <button disabled={loading} className="btn-primary w-full">

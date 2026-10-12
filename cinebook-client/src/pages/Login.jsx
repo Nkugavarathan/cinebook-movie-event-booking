@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { useAuth } from "../context/AuthContext"
 import { errorMessage } from "../services/api"
 import AuthLayout from "../components/AuthLayout"
+import PasswordInput from "../components/PasswordInput"
 import { Spinner } from "../components/ui"
 
 export default function Login() {
@@ -43,7 +44,7 @@ export default function Login() {
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium">Password</span>
-          <input type="password" required autoComplete="current-password" className="input" placeholder="••••••••"
+          <PasswordInput required autoComplete="current-password" className="input" placeholder="••••••••"
             value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
         </label>
         <button disabled={loading} className="btn-primary w-full">

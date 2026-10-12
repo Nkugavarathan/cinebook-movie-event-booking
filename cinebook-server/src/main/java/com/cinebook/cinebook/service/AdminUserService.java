@@ -10,7 +10,6 @@ import com.cinebook.cinebook.repository.UserRepository;
 import com.cinebook.cinebook.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Admin user management. Guard rails: an admin can't block, demote or delete themselves,
+ * Admin user management: view accounts and their activity, change roles, block and delete.
+ * Admins never handle passwords - customers create their own accounts. Guard rails: an admin can't block, demote or delete themselves,
  * and the last remaining admin can never be demoted, blocked or deleted.
  */
 @Slf4j
@@ -30,7 +30,6 @@ public class AdminUserService {
     private final UserRepository userRepo;
     private final BookingRepository bookingRepo;
     private final CurrentUser currentUser;
-    private final PasswordEncoder passwordEncoder;
     private final DtoMapper mapper;
 
     @Transactional(readOnly = true)
@@ -62,22 +61,6 @@ public class AdminUserService {
     }
 
     @Transactional
-    public AdminUserDTO create(CreateUserRequest req) {
-        String email = req.email().trim().toLowerCase();
-        if (userRepo.existsByEmailIgnoreCase(email)) {
-            throw ApiException.conflict("An account with this email already exists");
-        }
-        User u = userRepo.save(User.builder()
-                .name(req.name().trim())
-                .email(email)
-                .password(passwordEncoder.encode(req.password()))
-                .role(req.role())
-                .build());
-        log.info("Admin {} created {} account {}", currentUser.require().getEmail(), u.getRole(), email);
-        return toDto(u, null, currentUser.require().getId());
-    }
-
-    @Transactional
     public AdminUserDTO update(Long id, UpdateUserRequest req) {
         User me = currentUser.require();
         User u = find(id);
@@ -97,10 +80,6 @@ public class AdminUserService {
             if (req.blocked() && u.getRole() == Role.ADMIN) requireAnotherAdmin();
             u.setBlocked(req.blocked());
             log.info("Admin {} {} {}", me.getEmail(), req.blocked() ? "blocked" : "unblocked", u.getEmail());
-        }
-        if (req.password() != null && !req.password().isBlank()) {
-            u.setPassword(passwordEncoder.encode(req.password()));
-            log.info("Admin {} reset the password of {}", me.getEmail(), u.getEmail());
         }
         return toDto(userRepo.save(u), stats().get(id), me.getId());
     }

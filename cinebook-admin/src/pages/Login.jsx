@@ -4,6 +4,7 @@ import { Clapperboard, Lock } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { errorMessage } from "../api/axios"
 import { Spinner } from "../components/ui"
+import PasswordInput from "../components/PasswordInput"
 
 export default function Login() {
   const { token, user, login } = useAuth()
@@ -49,7 +50,7 @@ export default function Login() {
         </label>
         <label className="mt-4 block">
           <span className="label">Password</span>
-          <input type="password" required className="input" autoComplete="current-password"
+          <PasswordInput required className="input" autoComplete="current-password"
             value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
         </label>
         <button disabled={loading} className="btn-primary mt-6 w-full py-3">
