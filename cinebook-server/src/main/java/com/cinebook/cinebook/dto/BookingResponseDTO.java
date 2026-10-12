@@ -26,5 +26,11 @@ public record BookingResponseDTO(
         String contactEmail,
         String contactPhone,
         String stripePaymentIntentId,
-        String stripeRefundId) {
+        String stripeRefundId,
+        /** Whether the customer can still cancel this booking for a refund. */
+        boolean refundable,
+        LocalDateTime refundDeadline,
+        /** Refunded amount, or for a refundable booking the amount they would get back. */
+        BigDecimal refundAmount,
+        String cancelledBy) {
 }

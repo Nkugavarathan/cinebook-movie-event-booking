@@ -17,6 +17,7 @@ public class DtoMapper {
 
     private final SeatRepository seatRepository;
     private final BookingSeatRepository bookingSeatRepository;
+    private final RefundPolicy refundPolicy;
 
     @Value("${app.currency}")
     private String currency;
@@ -79,6 +80,11 @@ public class DtoMapper {
                 b.getCreatedAt(), b.getExpiresAt(), b.getConfirmedAt(), b.getCancelledAt(),
                 u.getId(), u.getName(), u.getEmail(),
                 b.getContactName(), b.getContactEmail(), b.getContactPhone(),
-                b.getStripePaymentIntentId(), b.getStripeRefundId());
+                b.getStripePaymentIntentId(), b.getStripeRefundId(),
+                refundPolicy.isRefundable(b),
+                b.getStatus() == BookingStatus.CONFIRMED ? refundPolicy.deadline(b) : null,
+                b.getRefundAmount() != null ? b.getRefundAmount()
+                        : b.getStatus() == BookingStatus.CONFIRMED ? refundPolicy.customerRefundAmount(b) : null,
+                b.getCancelledBy());
     }
 }

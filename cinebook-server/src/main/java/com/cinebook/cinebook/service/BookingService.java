@@ -27,6 +27,9 @@ public interface BookingService {
     /** Cancels a hold, or cancels + refunds a paid booking via Stripe. */
     BookingResponseDTO adminCancel(Long bookingId);
 
+    /** Customer cancels their own paid ticket and is refunded via Stripe (until the refund deadline). */
+    BookingResponseDTO cancelAndRefund(Long bookingId);
+
     /** Ends the booking and frees its seats. */
     void release(Booking booking, BookingStatus newStatus);
 

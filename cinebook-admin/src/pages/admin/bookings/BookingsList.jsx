@@ -150,6 +150,12 @@ export default function BookingsList() {
             {detail.cancelledAt && <Row label="Cancelled" value={dateTime(detail.cancelledAt)} />}
             {detail.status === "PENDING" && <Row label="Hold expires" value={dateTime(detail.expiresAt)} />}
             {detail.stripePaymentIntentId && <Row label="Stripe payment" value={<code className="text-xs">{detail.stripePaymentIntentId}</code>} wide />}
+            {detail.status === "REFUNDED" && detail.refundAmount != null && (
+              <Row label="Refunded" value={`${money(detail.refundAmount, detail.currency)}${detail.cancelledBy ? ` · by ${detail.cancelledBy.toLowerCase()}` : ""}`} />
+            )}
+            {detail.status === "CONFIRMED" && detail.refundDeadline && (
+              <Row label="Customer can self-cancel until" value={dateTime(detail.refundDeadline)} />
+            )}
             {detail.stripeRefundId && <Row label="Stripe refund" value={<code className="text-xs">{detail.stripeRefundId}</code>} wide />}
           </dl>
         )}

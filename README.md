@@ -21,6 +21,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - Seats are **held for 10 minutes** while you pay; the countdown is shown at checkout
 - Secure payment on Stripe's hosted checkout (cards, Apple Pay, Google Pay)
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
+- **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
 
 **Admins**
 - Dashboard: revenue, tickets sold, 7-day revenue chart, top sellers (movies and events), recent bookings
@@ -115,6 +116,8 @@ APP_CURRENCY=usd                  # or lkr, inr, eur...
 DB_USERNAME=root
 DB_PASSWORD=
 JWT_SECRET=a-long-random-string-of-32+-characters
+REFUND_CUTOFF_HOURS=24            # customers can self-cancel until this many hours before the show
+REFUND_FEE_PERCENT=0              # cancellation fee kept from customer refunds (0 = full refund)
 ```
 On first start the server:
 - creates the admin account **admin@cinebook.com / Admin@123** (change it with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
@@ -179,7 +182,8 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/bookings/my` | My bookings |
 | GET | `/api/bookings/{id}` | One of my bookings |
 | POST | `/api/bookings/{id}/cancel` | Release an unpaid hold |
-| POST | `/api/payments/checkout/{bookingId}` | Create a Stripe Checkout Session → `{url}` |
+| POST | `/api/bookings/{id}/refund` | Cancel a paid ticket and refund it through Stripe (until `REFUND_CUTOFF_HOURS` before the show) |
+| POST | `/api/payments/checkout/{bookingId}` | Body `{name, email, phone}` (ticket holder, validated) → creates a Stripe Checkout Session pre-filled with that email → `{url}` |
 | POST | `/api/payments/confirm` | `{sessionId}`; the server verifies with Stripe and confirms |
 
 ### Admin (`ROLE_ADMIN`; others get 403)

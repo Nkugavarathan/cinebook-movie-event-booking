@@ -251,7 +251,9 @@ public class PaymentService {
         booking.setStripePaymentIntentId(paymentIntent);
         if (paymentIntent != null) {
             booking.setStripeRefundId(stripe.refund(paymentIntent));
+            booking.setRefundAmount(booking.getTotalAmount());
         }
+        booking.setCancelledBy("SYSTEM");
         bookingService.release(booking, BookingStatus.REFUNDED);
     }
 

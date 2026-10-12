@@ -6,7 +6,7 @@ import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import { BookingListSkeleton } from "../components/Skeletons"
 import { EmptyState, StatusBadge } from "../components/ui"
-import { longDate, money, parseDateTime, showStartsAt, time12 } from "../lib/format"
+import { dateTimeShort, longDate, money, parseDateTime, showStartsAt, time12 } from "../lib/format"
 
 const TABS = [
   ["upcoming", "Upcoming"],
@@ -82,6 +82,14 @@ export default function MyBookings() {
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-muted"><CalendarClock size={14} />{longDate(b.showtime.showDate)} · {time12(b.showtime.startTime)}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted"><MapPin size={14} />{b.showtime.theaterName} · {b.showtime.screenName}</p>
                 <p className="mt-1 text-xs text-faint">Seats {b.seatLabels} · {money(b.totalAmount, b.currency)} · {b.reference}</p>
+                {b.refundable && (
+                  <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                    Free cancellation until {dateTimeShort(b.refundDeadline)}
+                  </p>
+                )}
+                {b.status === "REFUNDED" && b.refundAmount != null && (
+                  <p className="mt-1.5 text-[11px] font-semibold text-sky-400">{money(b.refundAmount, b.currency)} refunded</p>
+                )}
               </div>
               {pendingLive ? (
                 <span className="hidden rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white sm:block">Complete payment</span>

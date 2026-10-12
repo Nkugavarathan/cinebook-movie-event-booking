@@ -93,9 +93,16 @@ public class StripeGateway {
     }
 
     public String refund(String paymentIntentId) {
+        return refund(paymentIntentId, null);
+    }
+
+    /** @param amountMinor amount in the smallest currency unit, or null for a full refund */
+    public String refund(String paymentIntentId, Long amountMinor) {
         requireConfigured();
         try {
-            Refund refund = Refund.create(RefundCreateParams.builder().setPaymentIntent(paymentIntentId).build());
+            RefundCreateParams.Builder params = RefundCreateParams.builder().setPaymentIntent(paymentIntentId);
+            if (amountMinor != null) params.setAmount(amountMinor);
+            Refund refund = Refund.create(params.build());
             return refund.getId();
         } catch (StripeException e) {
             log.error("Refund failed for {}", paymentIntentId, e);

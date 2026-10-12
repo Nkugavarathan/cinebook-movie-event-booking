@@ -40,3 +40,26 @@ export function StatusBadge({ status }) {
   const [label, cls] = STATUS[status] || [status, "bg-surface-2 text-muted border-line"]
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>
 }
+
+/** Centered confirm dialog. Closes on Escape / backdrop click unless busy. */
+export function ConfirmModal({ open, title, children, confirmLabel, cancelLabel = "Keep it", busy, onConfirm, onClose }) {
+  if (!open) return null
+  const close = () => !busy && onClose()
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={close} onKeyDown={(e) => e.key === "Escape" && close()} role="presentation">
+      <div role="dialog" aria-modal="true" aria-labelledby="confirm-title"
+        className="w-full max-w-md rounded-t-3xl border border-line bg-surface p-6 shadow-2xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}>
+        <h2 id="confirm-title" className="font-display text-xl font-bold">{title}</h2>
+        <div className="mt-3 text-sm text-muted">{children}</div>
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button className="btn-ghost py-2.5" onClick={close} disabled={busy} autoFocus>{cancelLabel}</button>
+          <button className="btn-primary py-2.5" onClick={onConfirm} disabled={busy}>
+            {busy && <Spinner size={16} />} {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

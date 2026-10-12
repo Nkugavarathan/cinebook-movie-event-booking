@@ -35,6 +35,12 @@ public class BookingController {
         return bookingService.getForCurrentUser(id);
     }
 
+    /** Cancel a paid ticket and get the money back (allowed until the refund deadline). */
+    @PostMapping("/{id}/refund")
+    public BookingResponseDTO refund(@PathVariable Long id) {
+        return bookingService.cancelAndRefund(id);
+    }
+
     @PostMapping("/{id}/cancel")
     public BookingResponseDTO cancel(@PathVariable Long id) {
         return bookingService.cancelPending(id);

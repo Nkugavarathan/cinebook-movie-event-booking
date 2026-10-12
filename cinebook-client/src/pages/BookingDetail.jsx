@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react"
 import { AlertTriangle, ArrowLeft, Printer } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
+import RefundPanel from "../components/RefundPanel"
 import { TicketSkeleton } from "../components/Skeletons"
 import { EmptyState, StatusBadge } from "../components/ui"
 import { dateTimeShort, longDate, money, time12 } from "../lib/format"
@@ -82,12 +83,14 @@ export default function BookingDetail() {
             </p>
           )}
           <div className="mt-5 flex w-full items-center justify-between border-t border-line pt-4 text-sm">
-            <span className="text-muted">Paid</span>
+            <span className="text-muted">{b.status === "REFUNDED" ? "Paid (refunded)" : "Paid"}</span>
             <span className="font-display text-lg font-bold">{money(b.totalAmount, b.currency)}</span>
           </div>
           {b.confirmedAt && <p className="mt-1 w-full text-right text-xs text-faint">Booked {dateTimeShort(b.confirmedAt)}</p>}
         </div>
       </div>
+
+      <RefundPanel booking={b} onChange={setB} />
 
       {b.status === "PENDING" && (
         <Link to={`/checkout/${b.id}`} className="btn-primary no-print mt-6 w-full">Complete payment</Link>

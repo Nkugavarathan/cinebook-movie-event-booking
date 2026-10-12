@@ -61,4 +61,10 @@ public class Booking {
     private String stripeSessionId;
     private String stripePaymentIntentId;
     private String stripeRefundId;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal refundAmount;
+
+    /** CUSTOMER, ADMIN or SYSTEM (late payment) - who cancelled / refunded. */
+    private String cancelledBy;
 }
