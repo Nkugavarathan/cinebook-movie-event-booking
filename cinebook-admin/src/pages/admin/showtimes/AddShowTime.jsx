@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Plus, X } from "lucide-react"
 import { toast } from "sonner"
-import api, { errorMessage } from "../../../api/axios"
+import api, { API_URL, errorMessage } from "../../../api/axios"
+import axios from "axios"
 import { PageHeader, Spinner } from "../../../components/ui"
 import { time12, todayIso } from "../../../lib/format"
 
@@ -24,6 +25,7 @@ export default function AddShowTime() {
   const [screens, setScreens] = useState([])
   const [saving, setSaving] = useState(false)
   const [newTime, setNewTime] = useState("")
+  const [currency, setCurrency] = useState("")
 
   const [form, setForm] = useState({
     movieId: params.get("movieId") || "",
@@ -40,6 +42,7 @@ export default function AddShowTime() {
   useEffect(() => {
     api.get("/movies").then((res) => setMovies(res.data.filter((m) => m.active))).catch(() => {})
     api.get("/events").then((res) => setEvents(res.data.filter((e) => e.active))).catch(() => {})
+    axios.get(`${API_URL}/payments/config`).then((res) => setCurrency((res.data.currency || "").toUpperCase())).catch(() => {})
     api.get("/theaters").then((res) => setTheaters(res.data)).catch(() => {})
   }, [])
 
@@ -173,19 +176,19 @@ export default function AddShowTime() {
         </div>
 
         <div>
-          <p className="label">Ticket prices</p>
+          <p className="label">Ticket prices {currency && <span className="font-normal text-muted">({currency})</span>}</p>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-muted" htmlFor="p-std">Standard *</label>
+              <label className="mb-1 block text-xs text-muted" htmlFor="p-std">Standard {currency} *</label>
               <input id="p-std" type="number" min="0.5" step="0.01" required className="input" value={form.priceStandard} onChange={set("priceStandard")} />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted" htmlFor="p-prem">Premium</label>
+              <label className="mb-1 block text-xs text-muted" htmlFor="p-prem">Premium {currency}</label>
               <input id="p-prem" type="number" min="0.5" step="0.01" className="input" value={form.pricePremium} onChange={set("pricePremium")}
                 placeholder={std ? `${(std * 1.5).toFixed(2)} (1.5×)` : "1.5× standard"} />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted" htmlFor="p-vip">VIP</label>
+              <label className="mb-1 block text-xs text-muted" htmlFor="p-vip">VIP {currency}</label>
               <input id="p-vip" type="number" min="0.5" step="0.01" className="input" value={form.priceVip} onChange={set("priceVip")}
                 placeholder={std ? `${(std * 2).toFixed(2)} (2×)` : "2× standard"} />
             </div>

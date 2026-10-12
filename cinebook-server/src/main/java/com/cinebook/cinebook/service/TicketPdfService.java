@@ -222,13 +222,7 @@ public class TicketPdfService {
     }
 
     public static String money(Booking b) {
-        try {
-            NumberFormat f = NumberFormat.getCurrencyInstance(Locale.US);
-            f.setCurrency(Currency.getInstance(b.getCurrency().toUpperCase()));
-            return f.format(b.getTotalAmount());
-        } catch (Exception e) {
-            return b.getCurrency().toUpperCase() + " " + b.getTotalAmount();
-        }
+        return Money.format(b.getTotalAmount(), b.getCurrency());
     }
 
     private static String safe(String s) {

@@ -50,10 +50,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     /** Per user: [userId, confirmed bookings, total spent, last booking time]. */
     @Query("""
-            select b.user.id, count(b), coalesce(sum(b.totalAmount), 0), max(b.createdAt)
+            select b.user.id, count(b),
+                   coalesce(sum(case when lower(b.currency) = lower(:currency) then b.totalAmount else 0 end), 0),
+                   max(b.createdAt)
             from Booking b where b.status = :status group by b.user.id
             """)
-    List<Object[]> statsByUser(@Param("status") BookingStatus status);
+    List<Object[]> statsByUser(@Param("status") BookingStatus status, @Param("currency") String currency);
 
     boolean existsByUserId(Long userId);
 

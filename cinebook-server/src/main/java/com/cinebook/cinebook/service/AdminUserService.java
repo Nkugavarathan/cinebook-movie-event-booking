@@ -109,7 +109,7 @@ public class AdminUserService {
 
     private Map<Long, Object[]> stats() {
         Map<Long, Object[]> map = new HashMap<>();
-        for (Object[] row : bookingRepo.statsByUser(BookingStatus.CONFIRMED)) {
+        for (Object[] row : bookingRepo.statsByUser(BookingStatus.CONFIRMED, mapper.currency())) {
             map.put((Long) row[0], row);
         }
         return map;

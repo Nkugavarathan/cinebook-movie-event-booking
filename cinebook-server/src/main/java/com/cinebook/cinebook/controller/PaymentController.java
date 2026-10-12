@@ -24,9 +24,13 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final StripeGateway stripeGateway;
 
+    @org.springframework.beans.factory.annotation.Value("${app.currency}")
+    private String currency;
+
     @GetMapping("/config")
     public Map<String, Object> config() {
-        return Map.of("enabled", stripeGateway.isConfigured(), "webhook", stripeGateway.isWebhookConfigured());
+        return Map.of("enabled", stripeGateway.isConfigured(), "webhook", stripeGateway.isWebhookConfigured(),
+                "currency", currency);
     }
 
     /** Starts Stripe Checkout for a held booking and returns the hosted payment page URL. */

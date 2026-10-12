@@ -186,13 +186,7 @@ public class TicketMailService {
     }
 
     private static String money(java.math.BigDecimal amount, String currency) {
-        try {
-            java.text.NumberFormat f = java.text.NumberFormat.getCurrencyInstance(Locale.US);
-            f.setCurrency(java.util.Currency.getInstance(currency.toUpperCase()));
-            return f.format(amount);
-        } catch (Exception e) {
-            return currency.toUpperCase() + " " + amount;
-        }
+        return Money.format(amount, currency);
     }
 
     private record Mail(String to, String name, String reference, String subject, String html, byte[] pdf) {

@@ -47,7 +47,7 @@ function PaymentPreview() {
       <div className="mt-1.5 rounded-md border border-line bg-surface-2 px-2 py-1.5 font-mono text-[11px] tracking-widest">
         •••• 4242
       </div>
-      <div className="mt-2.5 rounded-md bg-brand py-1.5 text-center text-[11px] font-semibold text-white">Pay $27</div>
+      <div className="mt-2.5 rounded-md bg-brand py-1.5 text-center text-[11px] font-semibold text-white">Pay now</div>
       <p className="mt-2 flex items-center justify-center gap-1 text-[9px] text-faint"><Lock size={9} /> Secured by Stripe</p>
     </div>
   )

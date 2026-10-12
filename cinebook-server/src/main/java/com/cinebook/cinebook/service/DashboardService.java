@@ -29,8 +29,12 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardDTO summary() {
-        List<Booking> confirmed = bookingRepo.findByStatus(BookingStatus.CONFIRMED);
-        long tickets = confirmed.stream().mapToLong(b -> b.getSeats().size()).sum();
+        List<Booking> allConfirmed = bookingRepo.findByStatus(BookingStatus.CONFIRMED);
+        long tickets = allConfirmed.stream().mapToLong(b -> b.getSeats().size()).sum();
+        // Money is only added up for bookings paid in the active currency (never mix LKR and USD).
+        List<Booking> confirmed = allConfirmed.stream()
+                .filter(b -> mapper.currency().equalsIgnoreCase(b.getCurrency()))
+                .toList();
 
         LocalDate today = LocalDate.now();
         Map<LocalDate, List<Booking>> byDay = confirmed.stream()
@@ -58,7 +62,7 @@ public class DashboardService {
 
         return new DashboardDTO(
                 sum(confirmed),
-                confirmed.size(),
+                allConfirmed.size(),
                 bookingRepo.countByStatus(BookingStatus.PENDING),
                 tickets,
                 movieRepo.countByActiveTrue(),

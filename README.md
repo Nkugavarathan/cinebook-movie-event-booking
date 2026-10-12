@@ -120,7 +120,7 @@ mvn spring-boot:run
 ```properties
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=            # optional locally, see below (leave empty if unused)
-APP_CURRENCY=usd                  # or lkr, inr, eur...
+APP_CURRENCY=lkr                  # lkr (default) or usd, inr, eur... - prices are NOT converted when you switch
 DB_USERNAME=root
 DB_PASSWORD=
 JWT_SECRET=a-long-random-string-of-32+-characters
