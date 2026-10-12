@@ -1,37 +1,32 @@
 import { useState } from "react"
-import api from "../../../api/axios"
-import MovieForm from "./MovieForm"
-import AdminSidebar from "../../../components/Sidebar"
-import AdminHeader from "../../../components/Header"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import api, { errorMessage } from "../../../api/axios"
+import MovieForm, { EMPTY_MOVIE } from "./MovieForm"
+import { PageHeader } from "../../../components/ui"
 
 export default function AddMovie() {
-  const [movie, setMovie] = useState({
-    title: "",
-    description: "",
-    posterUrl: "",
-    trailerUrl: "",
-    genre: "",
-    language: "",
-    duration: "",
-  })
+  const navigate = useNavigate()
+  const [movie, setMovie] = useState(EMPTY_MOVIE)
+  const [saving, setSaving] = useState(false)
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    await api.post("/movies", movie)
-    window.location.href = "/admin/movies"
+    setSaving(true)
+    try {
+      await api.post("/movies", { ...movie, duration: Number(movie.duration), releaseDate: movie.releaseDate || null })
+      toast.success(`"${movie.title}" added`)
+      navigate("/admin/movies")
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not save movie"))
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="flex">
-      <AdminSidebar />
-
-      <div className="flex-1 bg-[#F7F7F7] min-h-screen">
-        <AdminHeader />
-
-        <h2 className="p-6 text-2xl font-semibold">Add Movie</h2>
-
-        <MovieForm movie={movie} setMovie={setMovie} onSubmit={onSubmit} />
-      </div>
+    <div>
+      <PageHeader title="Add movie" subtitle="Add a film to the catalogue, then schedule showtimes for it." />
+      <MovieForm movie={movie} setMovie={setMovie} onSubmit={onSubmit} saving={saving} submitLabel="Add movie" />
     </div>
   )
 }
