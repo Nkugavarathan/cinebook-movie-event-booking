@@ -1,5 +1,5 @@
 export function money(amount, currency = "usd") {
-  if (amount == null) return "—"
+  if (amount == null) return "-"
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(amount)
   } catch {
@@ -25,7 +25,7 @@ export function time12(hhmm) {
 }
 
 export function dateTime(value) {
-  if (!value) return "—"
+  if (!value) return "-"
   const d = new Date(value.replace(/(\.\d{3})\d+/, "$1"))
   return d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
 }

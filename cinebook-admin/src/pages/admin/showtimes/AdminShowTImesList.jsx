@@ -150,7 +150,7 @@ export default function AdminShowTimesList() {
       <Modal
         open={!!occupancy}
         wide
-        title={occupancy ? `${occupancy.showtime.movieTitle} — ${shortDate(occupancy.showtime.showDate)}, ${time12(occupancy.showtime.startTime)}` : ""}
+        title={occupancy ? `${occupancy.showtime.movieTitle} - ${shortDate(occupancy.showtime.showDate)}, ${time12(occupancy.showtime.startTime)}` : ""}
         onClose={() => setOccupancy(null)}
       >
         {occupancy && (

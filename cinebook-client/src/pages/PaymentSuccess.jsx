@@ -62,7 +62,7 @@ export default function PaymentSuccess() {
     )
   }
   return (
-    <Result icon={Clock} tone="text-amber-400 bg-amber-500/10" title="Payment is still processing" text="Stripe hasn't confirmed this payment yet. We'll confirm your ticket as soon as it does — check My Tickets in a minute.">
+    <Result icon={Clock} tone="text-amber-400 bg-amber-500/10" title="Payment is still processing" text="Stripe hasn't confirmed this payment yet. We'll confirm your ticket as soon as it does - check My Tickets in a minute.">
       <Link to="/bookings" className="btn-primary">My tickets</Link>
     </Result>
   )

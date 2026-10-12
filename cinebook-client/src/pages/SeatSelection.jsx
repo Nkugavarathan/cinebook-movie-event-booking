@@ -74,7 +74,7 @@ export default function SeatSelection() {
 
   const proceed = async () => {
     if (!isAuthed) {
-      toast.info("Sign in to book your seats — we'll keep your selection.")
+      toast.info("Sign in to book your seats - we'll keep your selection.")
       navigate("/login", { state: { from: location.pathname } })
       return
     }

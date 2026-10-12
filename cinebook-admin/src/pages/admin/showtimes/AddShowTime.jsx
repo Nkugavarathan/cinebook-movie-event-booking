@@ -100,7 +100,7 @@ export default function AddShowTime() {
             <select id="theater" className="input" required value={form.theaterId}
               onChange={(e) => chooseTheater(e.target.value)}>
               <option value="">Select theater</option>
-              {theaters.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.city}</option>)}
+              {theaters.map((t) => <option key={t.id} value={t.id}>{t.name} - {t.city}</option>)}
             </select>
           </div>
           <div>

@@ -118,7 +118,7 @@ export default function MoviesList() {
       <ConfirmDialog
         open={!!toDelete}
         title="Delete movie?"
-        message={`"${toDelete?.title}" and its showtimes without bookings will be deleted. Movies with bookings can't be deleted — mark them inactive instead.`}
+        message={`"${toDelete?.title}" and its showtimes without bookings will be deleted. Movies with bookings can't be deleted - mark them inactive instead.`}
         busy={busy}
         onConfirm={confirmDelete}
         onClose={() => setToDelete(null)}

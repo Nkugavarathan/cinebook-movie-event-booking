@@ -29,7 +29,7 @@ export default function MovieForm({ movie, setMovie, onSubmit, saving, submitLab
           <div>
             <label className="label" htmlFor="certificate">Certificate</label>
             <select id="certificate" className="input" value={movie.certificate || ""} onChange={set("certificate")}>
-              {CERTS.map((c) => <option key={c} value={c}>{c || "—"}</option>)}
+              {CERTS.map((c) => <option key={c} value={c}>{c || "-"}</option>)}
             </select>
           </div>
           <div>

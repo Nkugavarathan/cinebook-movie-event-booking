@@ -24,7 +24,7 @@ export default function Register() {
     setLoading(true)
     try {
       await register(data.name, data.email, data.password)
-      toast.success("Account created — enjoy the show!")
+      toast.success("Account created - enjoy the show!")
       navigate(from, { replace: true })
     } catch (err) {
       setError(errorMessage(err, "Registration failed"))
