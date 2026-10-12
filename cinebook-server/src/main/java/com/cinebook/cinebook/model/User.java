@@ -31,4 +31,11 @@ public class User {
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /** Blocked accounts can't sign in. Nullable so existing rows default to "not blocked". */
+    private Boolean blocked;
+
+    public boolean isBlocked() {
+        return Boolean.TRUE.equals(blocked);
+    }
 }

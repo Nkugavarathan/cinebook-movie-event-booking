@@ -43,7 +43,12 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, "Malformed request");
     }
 
-    @ExceptionHandler({BadCredentialsException.class, DisabledException.class})
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleBlocked(DisabledException ex) {
+        return body(HttpStatus.FORBIDDEN, "This account has been blocked. Please contact CineBook support.");
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(Exception ex) {
         return body(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     }

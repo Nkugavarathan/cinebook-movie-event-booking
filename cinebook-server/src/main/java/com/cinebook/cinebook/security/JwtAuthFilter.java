@@ -37,6 +37,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 String email = jwtUtil.extractEmail(token);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+                if (!userDetails.isEnabled()) {
+                    // Blocked after the token was issued: treat as signed out.
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 var authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
