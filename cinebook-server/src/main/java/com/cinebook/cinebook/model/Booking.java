@@ -1,8 +1,11 @@
 package com.cinebook.cinebook.model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,18 +21,39 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double totalAmount;
+    /** Human friendly ticket code, e.g. CB-7K2P9QX. */
+    @Column(unique = true, nullable = false)
+    private String reference;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private User user;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private ShowTime showTime;
 
-    @ManyToMany
-    private List<Seat> seats;
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("seatLabel ASC")
+    @Builder.Default
+    private List<BookingSeat> seats = new ArrayList<>();
 
-    private String paymentId; // Stripe payment ID
-    private boolean paymentSuccess;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BookingStatus status;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+
+    private String currency;
+
+    /** Snapshot like "A5, A6" so the history survives seat releases. */
+    private String seatLabels;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime expiresAt;
+    private LocalDateTime confirmedAt;
+    private LocalDateTime cancelledAt;
+
+    private String stripeSessionId;
+    private String stripePaymentIntentId;
+    private String stripeRefundId;
 }
-

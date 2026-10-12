@@ -1,9 +1,11 @@
 package com.cinebook.cinebook.model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -19,13 +21,38 @@ public class ShowTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private LocalDate showDate;
-    private LocalTime startTime;
-    private double price;
 
-    @ManyToOne
+    @Column(nullable = false)
+    private LocalTime startTime;
+
+    private LocalTime endTime;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal priceStandard;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal pricePremium;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal priceVip;
+
+    @ManyToOne(optional = false)
     private Movie movie;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Screen screen;
+
+    public BigDecimal priceFor(SeatType type) {
+        return switch (type) {
+            case PREMIUM -> pricePremium;
+            case VIP -> priceVip;
+            default -> priceStandard;
+        };
+    }
+
+    public LocalDateTime getStartsAt() {
+        return LocalDateTime.of(showDate, startTime);
+    }
 }

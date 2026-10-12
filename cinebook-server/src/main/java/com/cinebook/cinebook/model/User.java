@@ -3,11 +3,15 @@ package com.cinebook.cinebook.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -21,16 +25,10 @@ public class User {
 
     private String password;
 
-    public enum Role {
-        USER,
-        ADMIN
-    }
     @Enumerated(EnumType.STRING)
-    private Role role=Role.USER;
+    @Builder.Default
+    private Role role = Role.USER;
+
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 }
-
-
-
-//    @ManyToOne
-//    @JoinColumn(name = "role_id")
-//    private Role role;
