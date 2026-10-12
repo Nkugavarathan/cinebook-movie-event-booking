@@ -11,12 +11,14 @@ import com.cinebook.cinebook.repository.ShowTimeRepository;
 import com.cinebook.cinebook.security.CurrentUser;
 import com.cinebook.cinebook.service.BookingService;
 import com.cinebook.cinebook.service.BookingLock;
+import com.cinebook.cinebook.service.BookingRefundedEvent;
 import com.cinebook.cinebook.service.DtoMapper;
 import com.cinebook.cinebook.service.RefundPolicy;
 import com.cinebook.cinebook.service.StripeGateway;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,7 @@ public class BookingServiceImpl implements BookingService {
     private final DtoMapper mapper;
     private final StripeGateway stripe;
     private final RefundPolicy refundPolicy;
+    private final ApplicationEventPublisher events;
 
     @Value("${app.booking.hold-minutes}")
     private int holdMinutes;
@@ -250,6 +253,10 @@ public class BookingServiceImpl implements BookingService {
             bs.setLocked(null);
         }
         bookingRepo.save(booking);
+        if (newStatus == BookingStatus.REFUNDED) {
+            // Every refund path ends here; the customer is emailed after this transaction commits.
+            events.publishEvent(new BookingRefundedEvent(booking.getId()));
+        }
     }
 
     @Override

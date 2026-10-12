@@ -70,4 +70,7 @@ public class Booking {
 
     /** When the PDF ticket was last emailed (null = not sent yet / email disabled). */
     private LocalDateTime ticketEmailedAt;
+
+    /** When the refund confirmation email was sent. */
+    private LocalDateTime refundEmailedAt;
 }

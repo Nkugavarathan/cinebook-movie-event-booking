@@ -101,6 +101,100 @@ public class TicketMailService {
         return mail.to;
     }
 
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onBookingRefunded(BookingRefundedEvent event) {
+        if (!isConfigured()) {
+            log.warn("MAIL_USERNAME / MAIL_PASSWORD not set - refund email for booking {} skipped", event.bookingId());
+            return;
+        }
+        try {
+            sendRefundNotice(event.bookingId());
+        } catch (Exception e) {
+            log.error("Refund email for booking {} failed: {}", event.bookingId(), e.getMessage());
+        }
+    }
+
+    /** Tells the customer their booking was cancelled and how much is coming back to their card. */
+    public String sendRefundNotice(Long bookingId) throws Exception {
+        Mail mail = tx.execute(status -> {
+            Booking b = bookingRepo.findById(bookingId).orElseThrow();
+            if (b.getStatus() != BookingStatus.REFUNDED) {
+                throw new IllegalStateException("Booking " + b.getReference() + " is not refunded");
+            }
+            String to = b.getContactEmail() != null ? b.getContactEmail() : b.getUser().getEmail();
+            String name = b.getContactName() != null ? b.getContactName() : b.getUser().getName();
+            String subject = "Refund confirmed: " + b.getShowTime().getTitle() + " (" + b.getReference() + ")";
+            return new Mail(to, name, b.getReference(), subject, refundHtml(b, name), null);
+        });
+
+        MimeMessage msg = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+        helper.setFrom(new InternetAddress(username, fromName));
+        helper.setTo(new InternetAddress(mail.to, mail.name));
+        helper.setSubject(mail.subject);
+        helper.setText("Hi " + mail.name + ",\n\nBooking " + mail.reference + " has been cancelled and refunded to the card "
+                + "you paid with. Banks usually take 5-10 business days to show it.\n\nCineBook", mail.html);
+        mailSender.send(msg);
+
+        tx.executeWithoutResult(status -> bookingRepo.findById(bookingId)
+                .ifPresent(b -> b.setRefundEmailedAt(LocalDateTime.now())));
+        log.info("Refund notice for {} emailed to {}", mail.reference, mail.to);
+        return mail.to;
+    }
+
+    private String refundHtml(Booking b, String name) {
+        ShowTime st = b.getShowTime();
+        java.math.BigDecimal refunded = b.getRefundAmount() != null ? b.getRefundAmount() : b.getTotalAmount();
+        java.math.BigDecimal fee = b.getTotalAmount().subtract(refunded);
+        String reason = switch (b.getCancelledBy() == null ? "" : b.getCancelledBy()) {
+            case "CUSTOMER" -> "As requested, we've cancelled your booking.";
+            case "ADMIN" -> "Your booking has been cancelled by CineBook. We're sorry for the inconvenience.";
+            case "SYSTEM" -> "Your payment arrived after your seat hold had ended and the seats were no longer available, so we couldn't issue tickets.";
+            default -> "Your booking has been cancelled.";
+        };
+        String row = "<tr><td style=\"padding:6px 0;color:#6b6b80;font-size:13px;width:120px\">%s</td>"
+                + "<td style=\"padding:6px 0;color:#15151f;font-size:14px;font-weight:600\">%s</td></tr>";
+        String rows = String.format(row, "Booking ref", esc(b.getReference()))
+                + String.format(row, "Show", esc(st.getTitle()))
+                + String.format(row, "Was on", esc(st.getStartsAt().format(WHEN)))
+                + String.format(row, st.isEvent() ? "Venue" : "Cinema", esc(st.getScreen().getTheater().getName()))
+                + String.format(row, "Seats", esc(b.getSeatLabels()) + " <span style=\"color:#8a8aa0;font-weight:400\">(released)</span>")
+                + String.format(row, "You paid", esc(money(b.getTotalAmount(), b.getCurrency())))
+                + (fee.signum() > 0 ? String.format(row, "Cancellation fee", esc(money(fee, b.getCurrency()))) : "");
+        return """
+                <div style="background:#f4f4f8;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
+                  <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
+                    <div style="background:#0284c7;padding:18px 24px;color:#ffffff;font-size:20px;font-weight:bold">CineBook &middot; Refund confirmed</div>
+                    <div style="padding:24px">
+                      <p style="margin:0 0 4px;color:#15151f;font-size:16px">Hi %s,</p>
+                      <p style="margin:0 0 20px;color:#4b4b5c;font-size:14px">%s</p>
+                      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;text-align:center">
+                        <div style="color:#0369a1;font-size:12px;font-weight:bold;letter-spacing:1px">REFUND</div>
+                        <div style="color:#0c4a6e;font-size:30px;font-weight:bold;margin:4px 0">%s</div>
+                        <div style="color:#4b4b5c;font-size:13px">to the card you paid with &middot; usually visible in 5-10 business days</div>
+                      </div>
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px">%s</table>
+                      <p style="margin:16px 0 0;color:#4b4b5c;font-size:13px">Your old ticket and QR code no longer work.</p>
+                      <div style="text-align:center;margin:24px 0 4px">
+                        <a href="%s" style="background:#e11d48;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:bold;font-size:14px;display:inline-block">Book again</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                """.formatted(esc(name), esc(reason), esc(money(refunded, b.getCurrency())), rows, clientUrl);
+    }
+
+    private static String money(java.math.BigDecimal amount, String currency) {
+        try {
+            java.text.NumberFormat f = java.text.NumberFormat.getCurrencyInstance(Locale.US);
+            f.setCurrency(java.util.Currency.getInstance(currency.toUpperCase()));
+            return f.format(amount);
+        } catch (Exception e) {
+            return currency.toUpperCase() + " " + amount;
+        }
+    }
+
     private record Mail(String to, String name, String reference, String subject, String html, byte[] pdf) {
     }
 

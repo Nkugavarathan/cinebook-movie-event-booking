@@ -156,6 +156,9 @@ export default function BookingsList() {
             {detail.status === "CONFIRMED" && detail.refundDeadline && (
               <Row label="Customer can self-cancel until" value={dateTime(detail.refundDeadline)} />
             )}
+            {detail.status === "REFUNDED" && (
+              <Row label="Refund email" value={detail.refundEmailedAt ? `Sent ${dateTime(detail.refundEmailedAt)}` : "Not sent"} />
+            )}
             {detail.stripeRefundId && <Row label="Stripe refund" value={<code className="text-xs">{detail.stripeRefundId}</code>} wide />}
           </dl>
         )}

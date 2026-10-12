@@ -25,6 +25,13 @@ export default function RefundPanel({ booking, onChange }) {
             {b.cancelledAt ? ` on ${dateTimeShort(b.cancelledAt)}` : ""}. The money goes back to the card you paid with
             and usually shows up within 5-10 business days.
           </p>
+          {b.contactEmail && (
+            <p className="mt-1 text-muted">
+              {b.refundEmailedAt
+                ? `We emailed a confirmation to ${b.contactEmail}.`
+                : `A confirmation email is on its way to ${b.contactEmail}.`}
+            </p>
+          )}
         </div>
       </div>
     )

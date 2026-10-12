@@ -22,6 +22,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - Secure payment on Stripe's hosted checkout (cards, Apple Pay, Google Pay)
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
 - **Ticket PDF by email** automatically after payment (also downloadable / re-sendable from the ticket page)
+- **Refund confirmation email** whenever a booking is refunded
 - **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
 
 **Admins**
@@ -81,7 +82,7 @@ sequenceDiagram
 A `ShowTime` points to either a `Movie` or an `Event` and to a `Screen` (a cinema screen or a venue hall, each with its own seat layout). Seat holds, Stripe checkout, refunds and QR tickets therefore work the same for both. Venues are created under **Theaters & venues**.
 
 ### Ticket emails
-When a booking is confirmed, `PaymentService` publishes a `BookingConfirmedEvent`. `TicketMailService` handles it **after the transaction commits** and on a background thread: it renders the PDF (OpenPDF + ZXing QR code) and sends it through Gmail SMTP to the contact email entered at checkout. A slow or failing mail server never affects the payment; the ticket can always be downloaded or re-sent from the ticket page. If `MAIL_USERNAME`/`MAIL_PASSWORD` are empty, emails are skipped with a log warning.
+When a booking is confirmed, `PaymentService` publishes a `BookingConfirmedEvent`. `TicketMailService` handles it **after the transaction commits** and on a background thread: it renders the PDF (OpenPDF + ZXing QR code) and sends it through Gmail SMTP to the contact email entered at checkout. Likewise, whenever a paid booking is refunded (customer self-cancel, admin cancel, or an automatic refund of a late payment) a `BookingRefundedEvent` triggers a **refund confirmation email** with the refunded amount, the cancelled show and seats. A slow or failing mail server never affects the payment; the ticket can always be downloaded or re-sent from the ticket page. If `MAIL_USERNAME`/`MAIL_PASSWORD` are empty, emails are skipped with a log warning.
 
 For Gmail, turn on 2-Step Verification and create an **App Password** (Google Account -> Security -> App passwords). Gmail allows roughly 500 emails a day from a personal account.
 
