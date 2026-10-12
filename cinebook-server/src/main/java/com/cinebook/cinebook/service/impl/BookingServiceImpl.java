@@ -10,6 +10,7 @@ import com.cinebook.cinebook.repository.SeatRepository;
 import com.cinebook.cinebook.repository.ShowTimeRepository;
 import com.cinebook.cinebook.security.CurrentUser;
 import com.cinebook.cinebook.service.BookingService;
+import com.cinebook.cinebook.service.BookingLock;
 import com.cinebook.cinebook.service.DtoMapper;
 import com.cinebook.cinebook.service.RefundPolicy;
 import com.cinebook.cinebook.service.StripeGateway;
@@ -36,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final BookingRepository bookingRepo;
+    private final BookingLock bookingLock;
     private final BookingSeatRepository bookingSeatRepo;
     private final ShowTimeRepository showTimeRepo;
     private final SeatRepository seatRepo;
@@ -160,7 +162,7 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public BookingResponseDTO cancelPending(Long bookingId) {
         Booking booking = findOwned(bookingId);
-        booking = bookingRepo.findByIdForUpdate(booking.getId()).orElseThrow();
+        booking = bookingLock.lock(booking.getId()).orElseThrow();
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw ApiException.badRequest("Only unpaid bookings can be released");
         }
@@ -173,7 +175,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDTO cancelAndRefund(Long bookingId) {
-        Booking booking = bookingRepo.findByIdForUpdate(findOwned(bookingId).getId()).orElseThrow();
+        Booking booking = bookingLock.lock(findOwned(bookingId).getId()).orElseThrow();
         if (booking.getStatus() != BookingStatus.CONFIRMED) {
             throw ApiException.badRequest("Only confirmed tickets can be cancelled for a refund");
         }
@@ -213,7 +215,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDTO adminCancel(Long bookingId) {
-        Booking booking = bookingRepo.findByIdForUpdate(bookingId)
+        Booking booking = bookingLock.lock(bookingId)
                 .orElseThrow(() -> ApiException.notFound("Booking not found"));
 
         booking.setCancelledBy("ADMIN");

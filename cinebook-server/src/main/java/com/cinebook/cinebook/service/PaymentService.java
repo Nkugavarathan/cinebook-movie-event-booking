@@ -43,6 +43,7 @@ public class PaymentService {
     private static final DateTimeFormatter SHOW_FMT = DateTimeFormatter.ofPattern("EEE d MMM, h:mm a");
 
     private final BookingRepository bookingRepo;
+    private final BookingLock bookingLock;
     private final BookingSeatRepository bookingSeatRepo;
     private final ProcessedStripeEventRepository processedEventRepo;
     private final BookingService bookingService;
@@ -58,7 +59,7 @@ public class PaymentService {
     public CheckoutResponse createCheckout(Long bookingId, CheckoutRequest contact) {
         stripe.requireConfigured();
         User user = currentUser.require();
-        Booking booking = bookingRepo.findByIdForUpdate(bookingId)
+        Booking booking = bookingLock.lock(bookingId)
                 .orElseThrow(() -> ApiException.notFound("Booking not found"));
         if (!booking.getUser().getId().equals(user.getId())) {
             throw ApiException.notFound("Booking not found");
@@ -181,7 +182,7 @@ public class PaymentService {
             case "checkout.session.expired", "checkout.session.async_payment_failed" -> {
                 Session session = sessionOf(event);
                 bookingRepo.findByStripeSessionId(session.getId()).ifPresent(b -> {
-                    Booking locked = bookingRepo.findByIdForUpdate(b.getId()).orElseThrow();
+                    Booking locked = bookingLock.lock(b.getId()).orElseThrow();
                     if (locked.getStatus() == BookingStatus.PENDING) {
                         bookingService.release(locked, BookingStatus.EXPIRED);
                         log.info("Checkout for {} ended without payment; seats released", locked.getReference());
@@ -200,7 +201,7 @@ public class PaymentService {
      * so the webhook and the redirect can race safely.
      */
     private Booking applySession(Session session) {
-        Booking booking = bookingRepo.findByIdForUpdate(bookingIdOf(session))
+        Booking booking = bookingLock.lock(bookingIdOf(session))
                 .orElseThrow(() -> ApiException.notFound("Booking not found"));
 
         if (!"paid".equals(session.getPaymentStatus())) {

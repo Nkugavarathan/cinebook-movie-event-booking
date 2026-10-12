@@ -21,6 +21,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - Seats are **held for 10 minutes** while you pay; the countdown is shown at checkout
 - Secure payment on Stripe's hosted checkout (cards, Apple Pay, Google Pay)
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
+- **Ticket PDF by email** automatically after payment (also downloadable / re-sendable from the ticket page)
 - **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
 
 **Admins**
@@ -78,6 +79,11 @@ sequenceDiagram
 ### Movies and events share one booking engine
 A `ShowTime` points to either a `Movie` or an `Event` and to a `Screen` (a cinema screen or a venue hall, each with its own seat layout). Seat holds, Stripe checkout, refunds and QR tickets therefore work the same for both. Venues are created under **Theaters & venues**.
 
+### Ticket emails
+When a booking is confirmed, `PaymentService` publishes a `BookingConfirmedEvent`. `TicketMailService` handles it **after the transaction commits** and on a background thread: it renders the PDF (OpenPDF + ZXing QR code) and sends it through Gmail SMTP to the contact email entered at checkout. A slow or failing mail server never affects the payment; the ticket can always be downloaded or re-sent from the ticket page. If `MAIL_USERNAME`/`MAIL_PASSWORD` are empty, emails are skipped with a log warning.
+
+For Gmail, turn on 2-Step Verification and create an **App Password** (Google Account -> Security -> App passwords). Gmail allows roughly 500 emails a day from a personal account.
+
 ### How double booking is prevented
 - Each held or booked seat is a `booking_seat` row with `locked = TRUE`. The unique key `(show_time_id, seat_id, locked)` means only one live booking can own a seat. Released rows get `locked = NULL`, and NULLs never collide, so history is kept.
 - Two people clicking the same seat at the same moment: one insert wins and the other gets **HTTP 409** ("seat was just taken"). Tested with 8 parallel requests: 1 success, 7 conflicts.
@@ -116,6 +122,8 @@ APP_CURRENCY=usd                  # or lkr, inr, eur...
 DB_USERNAME=root
 DB_PASSWORD=
 JWT_SECRET=a-long-random-string-of-32+-characters
+MAIL_USERNAME=you@gmail.com        # ticket emails (Gmail SMTP)
+MAIL_PASSWORD=xxxxxxxxxxxxxxxx    # Gmail App Password, not your normal password
 REFUND_CUTOFF_HOURS=24            # customers can self-cancel until this many hours before the show
 REFUND_FEE_PERCENT=0              # cancellation fee kept from customer refunds (0 = full refund)
 ```
@@ -182,6 +190,8 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/bookings/my` | My bookings |
 | GET | `/api/bookings/{id}` | One of my bookings |
 | POST | `/api/bookings/{id}/cancel` | Release an unpaid hold |
+| GET | `/api/bookings/{id}/ticket.pdf` | Download the PDF e-ticket (confirmed bookings) |
+| POST | `/api/bookings/{id}/email-ticket` | Email the PDF ticket again (max once a minute) |
 | POST | `/api/bookings/{id}/refund` | Cancel a paid ticket and refund it through Stripe (until `REFUND_CUTOFF_HOURS` before the show) |
 | POST | `/api/payments/checkout/{bookingId}` | Body `{name, email, phone}` (ticket holder, validated) → creates a Stripe Checkout Session pre-filled with that email → `{url}` |
 | POST | `/api/payments/confirm` | `{sessionId}`; the server verifies with Stripe and confirms |
