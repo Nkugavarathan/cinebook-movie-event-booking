@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, CalendarX, Clock, Clapperboard, Globe, MapPin, Play, Users } from "lucide-react"
+import { ArrowLeft, CalendarX, Clock, Clapperboard, Globe, MapPin, Play, Search, SearchX, Users, X } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
+import FilterDropdown from "../components/FilterDropdown"
+import { TIME_SLOTS, inBucket, priceBuckets, timeSlotOf } from "../lib/showFilters"
 import { DetailSkeleton } from "../components/Skeletons"
 import { EmptyState } from "../components/ui"
 import { dayChip, longDate, money, parseDate, runtime, time12 } from "../lib/format"
@@ -16,6 +18,10 @@ export default function MovieDetail() {
   const [date, setDate] = useState(null)
   const [city, setCity] = useState("All")
   const [trailer, setTrailer] = useState(false)
+  const [times, setTimes] = useState(new Set())
+  const [prices, setPrices] = useState(new Set())
+  const [query, setQuery] = useState("")
+  const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
     api.get(`/movies/${id}`)
@@ -29,16 +35,42 @@ export default function MovieDetail() {
   const dates = useMemo(() => [...new Set((data?.showtimes || []).map((s) => s.showDate))], [data])
   const cities = useMemo(() => ["All", ...new Set((data?.showtimes || []).map((s) => s.city).filter(Boolean))], [data])
 
+  // Shows on the selected date/city, before the price / time / search filters.
+  const dayShows = useMemo(
+    () => (data?.showtimes || []).filter((s) => s.showDate === date && (city === "All" || s.city === city)),
+    [data, date, city]
+  )
+  const buckets = useMemo(() => priceBuckets(data?.showtimes || []), [data])
+  const currency = data?.showtimes[0]?.currency
+
+  const priceOptions = buckets.map((b) => ({
+    value: b.value,
+    label: `${money(b.lo, currency)} - ${money(b.hi, currency)}`,
+    count: dayShows.filter((s) => inBucket(s, b)).length,
+  }))
+  const timeOptions = TIME_SLOTS.map((t) => ({ ...t, count: dayShows.filter((s) => timeSlotOf(s) === t.value).length }))
+
   const byTheater = useMemo(() => {
+    const q = query.trim().toLowerCase()
     const groups = new Map()
-    ;(data?.showtimes || [])
-      .filter((s) => s.showDate === date && (city === "All" || s.city === city))
+    dayShows
+      .filter((s) => times.size === 0 || times.has(timeSlotOf(s)))
+      .filter((s) => prices.size === 0 || buckets.some((b) => prices.has(b.value) && inBucket(s, b)))
+      .filter((s) => !q || [s.theaterName, s.address, s.city].some((v) => v?.toLowerCase().includes(q)))
       .forEach((s) => {
         if (!groups.has(s.theaterId)) groups.set(s.theaterId, { theater: s, shows: [] })
         groups.get(s.theaterId).shows.push(s)
       })
     return [...groups.values()]
-  }, [data, date, city])
+  }, [dayShows, times, prices, buckets, query])
+
+  const filtersActive = times.size > 0 || prices.size > 0 || query.trim() !== ""
+  const clearFilters = () => {
+    setTimes(new Set())
+    setPrices(new Set())
+    setQuery("")
+    setSearchOpen(false)
+  }
 
   if (error) {
     return (
@@ -138,9 +170,53 @@ export default function MovieDetail() {
               })}
             </div>
 
-            <div className="mt-6 space-y-4">
-              {byTheater.length === 0 && (
+            {/* Filters */}
+            <div className="card mt-6 grid grid-cols-[1fr_1fr_auto] divide-x divide-line">
+              <FilterDropdown label="Filter Price Range" shortLabel="Price" options={priceOptions} selected={prices} onChange={setPrices} />
+              <FilterDropdown label="Filter Show Timings" shortLabel="Show time" options={timeOptions} selected={times} onChange={setTimes} align="right" />
+              <button
+                type="button"
+                onClick={() => setSearchOpen((o) => !o)}
+                aria-label="Search cinemas"
+                aria-expanded={searchOpen}
+                className={`grid w-14 place-items-center transition hover:bg-surface-2 ${searchOpen || query ? "text-brand" : "text-muted"}`}
+              >
+                <Search size={19} />
+              </button>
+            </div>
+            {searchOpen && (
+              <div className="relative mt-2">
+                <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search cinema name or area"
+                  className="input py-2.5 pl-10 pr-10 text-sm"
+                />
+                {query && (
+                  <button onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-ink">
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            )}
+            {filtersActive && (
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-muted">
+                  {byTheater.reduce((n, g) => n + g.shows.length, 0)} of {dayShows.length} shows match
+                </span>
+                <button onClick={clearFilters} className="font-semibold text-brand hover:underline">Clear filters</button>
+              </div>
+            )}
+
+            <div className="mt-4 space-y-4">
+              {byTheater.length === 0 && dayShows.length === 0 && (
                 <p className="card p-6 text-center text-sm text-muted">No shows in this city on {date && parseDate(date).toDateString()}.</p>
+              )}
+              {byTheater.length === 0 && dayShows.length > 0 && (
+                <EmptyState icon={SearchX} title="No shows match your filters" text="Try another time of day, price range or cinema."
+                  action={<button onClick={clearFilters} className="btn-ghost">Clear filters</button>} />
               )}
               {byTheater.map(({ theater, shows }) => (
                 <div key={theater.theaterId} className="card p-5">
