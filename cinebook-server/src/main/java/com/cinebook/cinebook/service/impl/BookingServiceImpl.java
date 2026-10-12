@@ -2,192 +2,258 @@ package com.cinebook.cinebook.service.impl;
 
 import com.cinebook.cinebook.dto.BookingRequestDTO;
 import com.cinebook.cinebook.dto.BookingResponseDTO;
-import com.cinebook.cinebook.dto.SeatDTO;
-import com.cinebook.cinebook.model.Booking;
-import com.cinebook.cinebook.model.Seat;
-import com.cinebook.cinebook.model.ShowTime;
-import com.cinebook.cinebook.model.User;
+import com.cinebook.cinebook.exception.ApiException;
+import com.cinebook.cinebook.model.*;
 import com.cinebook.cinebook.repository.BookingRepository;
+import com.cinebook.cinebook.repository.BookingSeatRepository;
 import com.cinebook.cinebook.repository.SeatRepository;
 import com.cinebook.cinebook.repository.ShowTimeRepository;
-import com.cinebook.cinebook.repository.UserRepository;
+import com.cinebook.cinebook.security.CurrentUser;
 import com.cinebook.cinebook.service.BookingService;
+import com.cinebook.cinebook.service.DtoMapper;
+import com.cinebook.cinebook.service.StripeGateway;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-//@Service
-//@RequiredArgsConstructor
-//public class BookingServiceImpl implements BookingService {
-//
-//    private final BookingRepository bookingRepo;
-//    private final ShowTimeRepository showTimeRepo;
-//    private final SeatRepository seatRepo;
-//    private final UserRepository userRepo;
-//
-//
-//    @Override
-//    @Transactional
-//    public BookingResponseDTO createBooking(BookingRequestDTO request) {
-//        // basic validations
-//        User user = userRepo.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
-//        ShowTime showTime = showTimeRepo.findById(request.getShowTimeId()).orElseThrow(() -> new RuntimeException("ShowTime not found"));
-//
-//        // load seats
-//        List<Seat> seats = seatRepo.findAllById(request.getSeatIds());
-//        if (seats.size() != request.getSeatIds().size()) {
-//            throw new RuntimeException("One or more seats not found");
-//        }
-//
-//        // ensure all seats belong to the showtime.screen
-//        Long screenId = showTime.getScreen().getId();
-//        for (Seat s : seats) {
-//            if (!Objects.equals(s.getScreen().getId(), screenId)) {
-//                throw new RuntimeException("Seat " + s.getId() + " does not belong to the show's screen");
-//            }
-//        }
-//
-//        // check already booked seat ids for this showtime
-//        List<Long> alreadyBooked = bookingRepo.findBookedSeatIdsByShowTime(showTime.getId());
-//        for (Seat s: seats) {
-//            if (alreadyBooked.contains(s.getId())) {
-//                throw new RuntimeException("Seat " + s.getId() + " already booked");
-//            }
-//        }
-//
-//        // compute total price (simple sum of showtime.price)
-//        double total = showTime.getPrice() * seats.size();
-//
-//        // optional check expected amount
-//        if (request.getExpectedAmount() > 0 && Math.abs(request.getExpectedAmount() - total) > 0.01) {
-//            throw new RuntimeException("Amount mismatch");
-//        }
-//
-//        Booking booking = Booking.builder()
-//                .user(user)
-//                .showTime(showTime)
-//                .seats(new ArrayList<>(seats))
-//                .totalAmount(total)
-//                .paymentId(null)
-//                .paymentSuccess(false) // set false until payment confirms (Stripe webhook)
-//                .build();
-//
-//        Booking saved = bookingRepo.save(booking);
-//
-//
-//        List<SeatDTO> seatDtos = seats.stream()
-//                .map(s -> SeatDTO.builder()
-//                        .id(s.getId())
-//                        .rowNumber(s.getRowNumber())
-//                        .seatNumber(s.getSeatNumber())
-//                        .available(false)
-//                        .build())
-//                .collect(Collectors.toList());
-//
-//        return BookingResponseDTO.builder()
-//                .bookingId(saved.getId())
-//                .paymentSuccess(saved.isPaymentSuccess())
-//                .totalAmount(saved.getTotalAmount())
-//                .seats(seatDtos)
-//                .build();
-//    }
-//
-//    @Override
-//    public BookingResponseDTO getBooking(Long bookingId) {
-//        Booking b = bookingRepo.findById(bookingId).orElseThrow(() -> new RuntimeException("Booking not found"));
-//        List<SeatDTO> seats = b.getSeats().stream()
-//                .map(s -> SeatDTO.builder()
-//                        .id(s.getId())
-//                        .rowNumber(s.getRowNumber())
-//                        .seatNumber(s.getSeatNumber())
-//                        .available(!b.isPaymentSuccess())
-//                        .build()).collect(Collectors.toList());
-//
-//        return BookingResponseDTO.builder()
-//                .bookingId(b.getId())
-//                .paymentSuccess(b.isPaymentSuccess())
-//                .seats(seats)
-//                .totalAmount(b.getTotalAmount())
-//                .build();
-//    }
-//}
-
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
+    private static final String REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final BookingRepository bookingRepo;
-    private final UserRepository userRepo;
+    private final BookingSeatRepository bookingSeatRepo;
     private final ShowTimeRepository showTimeRepo;
     private final SeatRepository seatRepo;
+    private final CurrentUser currentUser;
+    private final DtoMapper mapper;
+    private final StripeGateway stripe;
+
+    @Value("${app.booking.hold-minutes}")
+    private int holdMinutes;
+
+    @Value("${app.booking.max-seats}")
+    private int maxSeats;
 
     @Override
     @Transactional
-    public BookingResponseDTO createBooking(BookingRequestDTO request) {
+    public BookingResponseDTO hold(BookingRequestDTO request) {
+        User user = currentUser.require();
+        ShowTime st = showTimeRepo.findById(request.showTimeId())
+                .orElseThrow(() -> ApiException.notFound("Showtime not found"));
+        LocalDateTime now = LocalDateTime.now();
 
-        User user = userRepo.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!st.getStartsAt().isAfter(now)) {
+            throw ApiException.badRequest("This show has already started");
+        }
+        if (!st.getMovie().isActive()) {
+            throw ApiException.badRequest("Bookings for this movie are closed");
+        }
+        List<Long> seatIds = request.seatIds().stream().filter(Objects::nonNull).distinct().toList();
+        if (seatIds.isEmpty()) {
+            throw ApiException.badRequest("Select at least one seat");
+        }
+        if (seatIds.size() > maxSeats) {
+            throw ApiException.badRequest("You can book up to " + maxSeats + " seats at a time");
+        }
 
-        ShowTime showTime = showTimeRepo.findById(request.getShowTimeId())
-                .orElseThrow(() -> new RuntimeException("ShowTime not found"));
+        // Starting a new selection replaces this user's earlier hold for the same show.
+        for (Booking previous : bookingRepo.findByUserIdAndShowTimeIdAndStatus(user.getId(), st.getId(), BookingStatus.PENDING)) {
+            stripe.expireSessionQuietly(previous.getStripeSessionId());
+            release(previous, BookingStatus.CANCELLED);
+        }
+        // Free seats from holds that timed out but have not been swept yet.
+        for (Booking stale : bookingRepo.findByStatusAndExpiresAtBefore(BookingStatus.PENDING, now)) {
+            if (stale.getShowTime().getId().equals(st.getId())) {
+                release(stale, BookingStatus.EXPIRED);
+            }
+        }
+        // Updates must hit the database before the inserts below, or the unique key would see both.
+        bookingSeatRepo.flush();
 
-        List<Long> bookedSeatIds = bookingRepo.findBookedSeatIdsByShowTime(request.getShowTimeId());
-        List<Seat> selectedSeats = seatRepo.findAllById(request.getSeatIds());
-
-        for (Seat seat : selectedSeats) {
-            if (bookedSeatIds.contains(seat.getId())) {
-                throw new RuntimeException("Seat already booked: " + seat.getSeatNumber());
+        List<Seat> seats = seatRepo.findAllById(seatIds);
+        if (seats.size() != seatIds.size()) {
+            throw ApiException.badRequest("One or more seats do not exist");
+        }
+        for (Seat s : seats) {
+            if (!s.getScreen().getId().equals(st.getScreen().getId())) {
+                throw ApiException.badRequest("Seat " + s.getLabel() + " is not in this screen");
+            }
+            if (!s.isActive()) {
+                throw ApiException.badRequest("Seat " + s.getLabel() + " cannot be booked");
             }
         }
 
-        double total = showTime.getPrice() * selectedSeats.size();
+        List<BookingSeat> taken = bookingSeatRepo.findLockedForSeats(st.getId(), seatIds);
+        if (!taken.isEmpty()) {
+            String labels = taken.stream().map(BookingSeat::getSeatLabel).sorted().collect(Collectors.joining(", "));
+            throw ApiException.conflict("Sorry, " + labels + (taken.size() == 1 ? " was" : " were")
+                    + " just taken. Please choose other seats.");
+        }
+
+        seats.sort(Comparator.comparingInt(Seat::getRowNumber).thenComparingInt(Seat::getSeatNumber));
 
         Booking booking = Booking.builder()
+                .reference(newReference())
                 .user(user)
-                .showTime(showTime)
-                .seats(selectedSeats)
-                .totalAmount(total)
-                .paymentSuccess(true) // dummy payment = always success
+                .showTime(st)
+                .status(BookingStatus.PENDING)
+                .currency(mapper.currency())
+                .createdAt(now)
+                .expiresAt(now.plusMinutes(holdMinutes))
+                .seatLabels(seats.stream().map(Seat::getLabel).collect(Collectors.joining(", ")))
                 .build();
 
-        Booking saved = bookingRepo.save(booking);
+        BigDecimal total = BigDecimal.ZERO;
+        for (Seat s : seats) {
+            BigDecimal price = st.priceFor(s.getType());
+            total = total.add(price);
+            booking.getSeats().add(BookingSeat.builder()
+                    .booking(booking)
+                    .showTime(st)
+                    .seat(s)
+                    .seatType(s.getType())
+                    .seatLabel(s.getLabel())
+                    .price(price)
+                    .locked(Boolean.TRUE)
+                    .build());
+        }
+        booking.setTotalAmount(total);
 
-        return BookingResponseDTO.builder()
-                .bookingId(saved.getId())
-                .paymentSuccess(true)
-                .totalAmount(total)
-                .seats(selectedSeats.stream()
-                        .map(s -> SeatDTO.builder()
-                                .id(s.getId())
-                                .rowNumber(s.getRowNumber())
-                                .seatNumber(s.getSeatNumber())
-                                .available(false)
-                                .build())
-                        .toList())
-                .build();
+        // If another request grabbed a seat in the meantime the unique key fails here -> HTTP 409.
+        Booking saved = bookingRepo.saveAndFlush(booking);
+        log.info("Hold {} for {} seats on showtime {} by {}", saved.getReference(), seats.size(), st.getId(), user.getEmail());
+        return mapper.booking(saved);
     }
 
     @Override
-    public BookingResponseDTO getBooking(Long bookingId) {
-        Booking b = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> myBookings() {
+        User user = currentUser.require();
+        return bookingRepo.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
+                .map(mapper::booking)
+                .toList();
+    }
 
-        return BookingResponseDTO.builder()
-                .bookingId(b.getId())
-                .paymentSuccess(b.isPaymentSuccess())
-                .totalAmount(b.getTotalAmount())
-                .seats(b.getSeats().stream().map(s ->
-                        SeatDTO.builder()
-                                .id(s.getId())
-                                .rowNumber(s.getRowNumber())
-                                .seatNumber(s.getSeatNumber())
-                                .available(false)
-                                .build()
-                ).toList())
-                .build();
+    @Override
+    @Transactional(readOnly = true)
+    public BookingResponseDTO getForCurrentUser(Long bookingId) {
+        return mapper.booking(findOwned(bookingId));
+    }
+
+    @Override
+    @Transactional
+    public BookingResponseDTO cancelPending(Long bookingId) {
+        Booking booking = findOwned(bookingId);
+        booking = bookingRepo.findByIdForUpdate(booking.getId()).orElseThrow();
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw ApiException.badRequest("Only unpaid bookings can be released");
+        }
+        stripe.expireSessionQuietly(booking.getStripeSessionId());
+        release(booking, BookingStatus.CANCELLED);
+        return mapper.booking(booking);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> adminSearch(BookingStatus status, String query) {
+        String q = query == null || query.isBlank() ? null : query.trim();
+        return bookingRepo.search(status, q, PageRequest.of(0, 500)).stream()
+                .map(mapper::booking)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingResponseDTO adminGet(Long bookingId) {
+        return mapper.booking(bookingRepo.findById(bookingId)
+                .orElseThrow(() -> ApiException.notFound("Booking not found")));
+    }
+
+    @Override
+    @Transactional
+    public BookingResponseDTO adminCancel(Long bookingId) {
+        Booking booking = bookingRepo.findByIdForUpdate(bookingId)
+                .orElseThrow(() -> ApiException.notFound("Booking not found"));
+
+        switch (booking.getStatus()) {
+            case PENDING -> {
+                stripe.expireSessionQuietly(booking.getStripeSessionId());
+                release(booking, BookingStatus.CANCELLED);
+            }
+            case CONFIRMED -> {
+                if (booking.getStripePaymentIntentId() != null) {
+                    booking.setStripeRefundId(stripe.refund(booking.getStripePaymentIntentId()));
+                    release(booking, BookingStatus.REFUNDED);
+                } else {
+                    release(booking, BookingStatus.CANCELLED);
+                }
+            }
+            default -> throw ApiException.badRequest("Booking is already " + booking.getStatus().name().toLowerCase());
+        }
+        log.info("Admin cancelled booking {} -> {}", booking.getReference(), booking.getStatus());
+        return mapper.booking(booking);
+    }
+
+    @Override
+    @Transactional
+    public void release(Booking booking, BookingStatus newStatus) {
+        booking.setStatus(newStatus);
+        if (newStatus != BookingStatus.EXPIRED) {
+            booking.setCancelledAt(LocalDateTime.now());
+        }
+        for (BookingSeat bs : booking.getSeats()) {
+            bs.setLocked(null);
+        }
+        bookingRepo.save(booking);
+    }
+
+    @Override
+    @Scheduled(fixedDelayString = "${app.booking.sweep-interval-ms:30000}", initialDelay = 10000)
+    @Transactional
+    public int expireStaleHolds() {
+        List<Booking> stale = bookingRepo.findByStatusAndExpiresAtBefore(BookingStatus.PENDING, LocalDateTime.now());
+        for (Booking b : stale) {
+            stripe.expireSessionQuietly(b.getStripeSessionId());
+            release(b, BookingStatus.EXPIRED);
+            log.info("Hold {} expired; seats {} released", b.getReference(), b.getSeatLabels());
+        }
+        return stale.size();
+    }
+
+    private Booking findOwned(Long bookingId) {
+        User user = currentUser.require();
+        Booking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> ApiException.notFound("Booking not found"));
+        if (!booking.getUser().getId().equals(user.getId()) && user.getRole() != Role.ADMIN) {
+            // 404 rather than 403 so booking ids can't be probed
+            throw ApiException.notFound("Booking not found");
+        }
+        return booking;
+    }
+
+    private String newReference() {
+        String ref;
+        do {
+            StringBuilder sb = new StringBuilder("CB-");
+            for (int i = 0; i < 7; i++) {
+                sb.append(REF_ALPHABET.charAt(RANDOM.nextInt(REF_ALPHABET.length())));
+            }
+            ref = sb.toString();
+        } while (bookingRepo.existsByReference(ref));
+        return ref;
     }
 }

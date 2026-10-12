@@ -1,12 +1,12 @@
 package com.cinebook.cinebook.service;
 
-import com.cinebook.cinebook.dto.SeatDTO;
-import java.util.List;
+import com.cinebook.cinebook.dto.SeatMapDTO;
 
 public interface SeatService {
-    List<SeatDTO> getSeatsForScreen(Long screenId);
-    List<Long> getBookedSeatIdsForShowtime(Long showTimeId);
 
-    List<SeatDTO> getSeatsForShowtime(Long screenId, Long showTimeId);
+    /**
+     * Seat grid for a showtime with each seat's live status. Seats the current user is holding
+     * show as AVAILABLE, so they can go back and change their selection.
+     */
+    SeatMapDTO getSeatMap(Long showTimeId);
 }
-

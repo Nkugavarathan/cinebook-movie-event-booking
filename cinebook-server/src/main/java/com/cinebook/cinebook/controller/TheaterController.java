@@ -1,11 +1,10 @@
 package com.cinebook.cinebook.controller;
 
 import com.cinebook.cinebook.dto.TheaterDetailDTO;
-import com.cinebook.cinebook.model.Theater;
 import com.cinebook.cinebook.service.TheaterService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -16,13 +15,12 @@ public class TheaterController {
     private final TheaterService theaterService;
 
     @GetMapping
-    public List<Theater> getAll() {
+    public List<TheaterDetailDTO> getAll() {
         return theaterService.getAllTheaters();
     }
 
     @GetMapping("/{id}")
-    public Theater get(@PathVariable Long id) {
-        return theaterService.getTheaterById(id);
+    public TheaterDetailDTO get(@PathVariable Long id) {
+        return theaterService.getTheater(id);
     }
-
 }

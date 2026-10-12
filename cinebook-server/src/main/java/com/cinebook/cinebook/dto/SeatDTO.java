@@ -1,10 +1,12 @@
 package com.cinebook.cinebook.dto;
-import lombok.*;
 
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
-public class SeatDTO {
-    private Long id;
-    private int rowNumber;
-    private int seatNumber;
-    private boolean available;
+import com.cinebook.cinebook.model.SeatType;
+
+import java.math.BigDecimal;
+
+/**
+ * status: AVAILABLE, HELD (someone is paying), BOOKED; null in a layout-only view.
+ */
+public record SeatDTO(Long id, int row, int col, String label, SeatType type, boolean active,
+                      String status, BigDecimal price) {
 }

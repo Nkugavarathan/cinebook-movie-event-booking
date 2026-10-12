@@ -3,23 +3,24 @@ package com.cinebook.cinebook.service;
 import com.cinebook.cinebook.dto.MovieDetailDTO;
 import com.cinebook.cinebook.dto.MovieRequestDTO;
 import com.cinebook.cinebook.dto.MovieSummaryDTO;
-import com.cinebook.cinebook.model.Movie;
+
 import java.util.List;
 
 public interface MovieService {
-//    List<MovieSummaryDTO> listAllMovies();
-//    MovieDetailDTO getMovieDetail(Long movieId);
-//    Movie createMovie(Movie movie);
-//    Movie updateMovie(Long id, Movie movie);
-//    void deleteMovie(Long id);
 
-    List<MovieSummaryDTO> listAllMovies();
-    public Movie getMovieById(Long id) ;
-    MovieDetailDTO getMovieDetail(Long movieId);
+    /** Active movies for the client app, optionally filtered. */
+    List<MovieSummaryDTO> listPublic(String search, String genre, String language);
 
-    Movie createMovie(MovieRequestDTO dto);
+    /** Active movie with its upcoming showtimes. */
+    MovieDetailDTO getPublicDetail(Long movieId);
 
-    Movie updateMovie(Long id, MovieRequestDTO dto);
+    List<MovieSummaryDTO> listAll();
 
-    void deleteMovie(Long id);
+    MovieSummaryDTO get(Long id);
+
+    MovieSummaryDTO create(MovieRequestDTO dto);
+
+    MovieSummaryDTO update(Long id, MovieRequestDTO dto);
+
+    void delete(Long id);
 }

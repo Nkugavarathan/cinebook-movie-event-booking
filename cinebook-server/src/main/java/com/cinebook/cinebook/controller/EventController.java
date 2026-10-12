@@ -1,12 +1,16 @@
 package com.cinebook.cinebook.controller;
 
+import com.cinebook.cinebook.exception.ApiException;
 import com.cinebook.cinebook.model.Event;
 import com.cinebook.cinebook.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
+/** Read is public; changes are admin only. */
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
@@ -19,20 +23,23 @@ public class EventController {
         return eventRepo.findAll();
     }
 
-    @PostMapping
-    public ResponseEntity<Event> create(@RequestBody Event event) {
-        Event saved = eventRepo.save(event);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-
     @GetMapping("/{id}")
     public Event get(@PathVariable Long id) {
-        return eventRepo.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        return eventRepo.findById(id).orElseThrow(() -> ApiException.notFound("Event not found"));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Event create(@RequestBody Event event) {
+        event.setId(null);
+        return eventRepo.save(event);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Event update(@PathVariable Long id, @RequestBody Event event) {
-        Event ex = eventRepo.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        Event ex = get(id);
         ex.setName(event.getName());
         ex.setDescription(event.getDescription());
         ex.setPosterUrl(event.getPosterUrl());
@@ -42,8 +49,9 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
         eventRepo.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 }

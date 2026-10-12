@@ -1,18 +1,21 @@
 package com.cinebook.cinebook.dto;
 
-import lombok.*;
-//homepage list
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class MovieSummaryDTO {
-    private Long id;
-    private String title;
-    private String posterUrl;
-    private String language;
-    private String genre;
-    private double duration;
-    private String description;
+import java.time.LocalDate;
 
+public record MovieSummaryDTO(
+        Long id,
+        String title,
+        String description,
+        String posterUrl,
+        String backdropUrl,
+        String trailerUrl,
+        int duration,
+        String genre,
+        String language,
+        String certificate,
+        String director,
+        String castMembers,
+        LocalDate releaseDate,
+        boolean active,
+        long upcomingShows) {
 }

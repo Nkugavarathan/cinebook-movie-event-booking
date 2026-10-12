@@ -1,12 +1,18 @@
 package com.cinebook.cinebook.service.impl;
 
-import com.cinebook.cinebook.dto.*;
+import com.cinebook.cinebook.dto.AuthResponse;
+import com.cinebook.cinebook.dto.LoginRequest;
+import com.cinebook.cinebook.dto.SignupRequest;
+import com.cinebook.cinebook.exception.ApiException;
+import com.cinebook.cinebook.model.Role;
 import com.cinebook.cinebook.model.User;
 import com.cinebook.cinebook.repository.UserRepository;
+import com.cinebook.cinebook.security.CurrentUser;
 import com.cinebook.cinebook.security.JwtUtil;
 import com.cinebook.cinebook.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,41 +24,43 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final CurrentUser currentUser;
 
     @Override
     public AuthResponse signup(SignupRequest request) {
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
-
+        String email = request.email().trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw ApiException.conflict("An account with this email already exists");
         }
 
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(User.Role.USER);
-
+        User user = User.builder()
+                .name(request.name().trim())
+                .email(email)
+                .password(passwordEncoder.encode(request.password()))
+                .role(Role.USER)
+                .build();
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-
-        return new AuthResponse(token, user.getRole().name(),user.getName());
+        return toResponse(user, jwtUtil.generateToken(user.getEmail(), user.getRole().name()));
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        String email = request.email().trim().toLowerCase();
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(), request.getPassword()));
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> ApiException.notFound("User not found"));
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return toResponse(user, jwtUtil.generateToken(user.getEmail(), user.getRole().name()));
+    }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+    @Override
+    public AuthResponse me() {
+        return toResponse(currentUser.require(), null);
+    }
 
-        return new AuthResponse(token, user.getRole().name(),user.getName());
-//        return new AuthResponse(token, user.getName(),"fds");
+    private AuthResponse toResponse(User user, String token) {
+        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole().name());
     }
 }

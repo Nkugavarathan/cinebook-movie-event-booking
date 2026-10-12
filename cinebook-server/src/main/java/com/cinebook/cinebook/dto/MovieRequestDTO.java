@@ -1,21 +1,23 @@
 package com.cinebook.cinebook.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class MovieRequestDTO {
-    private String title;
-    private String description;
-    private String posterUrl;
-    private String trailerUrl;
-    private double duration;
-    private String genre;
-    private String language;
+import java.time.LocalDate;
+
+public record MovieRequestDTO(
+        @NotBlank(message = "Title is required") String title,
+        String description,
+        String posterUrl,
+        String backdropUrl,
+        String trailerUrl,
+        @NotNull(message = "Duration is required") @Min(value = 1, message = "Duration must be positive") Integer duration,
+        String genre,
+        String language,
+        String certificate,
+        String director,
+        String castMembers,
+        LocalDate releaseDate,
+        Boolean active) {
 }
-

@@ -1,16 +1,10 @@
 package com.cinebook.cinebook.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class TheaterRequest {
-    private String name;
-    private String city;
-    private String address;
+public record TheaterRequest(
+        @NotBlank(message = "Name is required") String name,
+        @NotBlank(message = "City is required") String city,
+        String address,
+        String facilities) {
 }

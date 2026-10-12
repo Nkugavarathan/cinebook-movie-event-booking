@@ -24,6 +24,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findByStripeSessionId(String sessionId);
 
+    boolean existsByReference(String reference);
+
     List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<Booking> findByUserIdAndShowTimeIdAndStatus(Long userId, Long showTimeId, BookingStatus status);

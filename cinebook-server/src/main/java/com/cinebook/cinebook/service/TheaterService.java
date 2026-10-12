@@ -2,60 +2,69 @@ package com.cinebook.cinebook.service;
 
 import com.cinebook.cinebook.dto.TheaterDetailDTO;
 import com.cinebook.cinebook.dto.TheaterRequest;
+import com.cinebook.cinebook.exception.ApiException;
+import com.cinebook.cinebook.model.Screen;
 import com.cinebook.cinebook.model.Theater;
+import com.cinebook.cinebook.repository.ScreenRepository;
 import com.cinebook.cinebook.repository.TheaterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TheaterService {
-//    List<Theater> listTheaters();
-//    TheaterDetailDTO getTheaterDetail(Long theaterId);
-//    Theater createTheater(Theater theater);
-//    TheaterDetailDTO addTheater(TheaterDetailDTO dto);
-
-//    TheaterDetailDTO updateTheater(Long id, TheaterDetailDTO dto);
-
-//    void deleteTheater(Long id);
 
     private final TheaterRepository theaterRepository;
+    private final ScreenRepository screenRepository;
+    private final ScreenService screenService;
+    private final DtoMapper mapper;
 
-    public List<Theater> getAllTheaters() {
-        return theaterRepository.findAll();
+    public List<TheaterDetailDTO> getAllTheaters() {
+        return theaterRepository.findAllByOrderByNameAsc().stream()
+                .map(t -> mapper.theater(t, screenRepository.countByTheaterId(t.getId())))
+                .toList();
     }
 
-    public Theater getTheaterById(Long id) {
-        return theaterRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Theater not found"));
+    public TheaterDetailDTO getTheater(Long id) {
+        Theater t = find(id);
+        return mapper.theater(t, screenRepository.countByTheaterId(id));
     }
 
-    public Theater addTheater(TheaterRequest req) {
-        Theater theater = Theater.builder()
-                .name(req.getName())
-                .city(req.getCity())
-                .address(req.getAddress())
-                .build();
-
-        return theaterRepository.save(theater);
+    public TheaterDetailDTO addTheater(TheaterRequest req) {
+        Theater theater = new Theater();
+        apply(theater, req);
+        return mapper.theater(theaterRepository.save(theater), 0);
     }
 
-    public Theater updateTheater(Long id, TheaterRequest req) {
-        Theater theater = getTheaterById(id);
-
-        theater.setName(req.getName());
-        theater.setCity(req.getCity());
-        theater.setAddress(req.getAddress());
-
-        return theaterRepository.save(theater);
+    public TheaterDetailDTO updateTheater(Long id, TheaterRequest req) {
+        Theater theater = find(id);
+        apply(theater, req);
+        theaterRepository.save(theater);
+        return getTheater(id);
     }
 
+    /** Deletes the theater and its screens; refused when any screen has showtimes. */
+    @Transactional
     public void deleteTheater(Long id) {
-        if (!theaterRepository.existsById(id)) {
-            throw new RuntimeException("Theater does not exist");
+        Theater theater = find(id);
+        List<Screen> screens = screenRepository.findByTheaterIdOrderByScreenNameAsc(id);
+        for (Screen s : screens) {
+            screenService.deleteScreen(s.getId());
         }
-        theaterRepository.deleteById(id);
+        theaterRepository.delete(theater);
     }
 
+    public Theater find(Long id) {
+        return theaterRepository.findById(id).orElseThrow(() -> ApiException.notFound("Theater not found"));
+    }
+
+    private void apply(Theater t, TheaterRequest req) {
+        t.setName(req.name().trim());
+        t.setCity(req.city().trim());
+        t.setAddress(req.address());
+        t.setFacilities(req.facilities());
+    }
 }
