@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, CalendarX, Clock, Globe, MapPin, PartyPopper, ShieldCheck, Ticket, User } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
-import { EmptyState, PageLoader } from "../components/ui"
+import { DetailSkeleton } from "../components/Skeletons"
+import { EmptyState } from "../components/ui"
 import { dayChip, longDate, money, runtime, time12 } from "../lib/format"
 
 export default function EventDetail() {
@@ -34,7 +35,7 @@ export default function EventDetail() {
       </div>
     )
   }
-  if (!data) return <PageLoader />
+  if (!data) return <DetailSkeleton wideImage />
 
   const e = data.event
 

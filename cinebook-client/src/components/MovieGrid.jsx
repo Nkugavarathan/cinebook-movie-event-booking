@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { Search, SearchX } from "lucide-react"
 import MovieCard from "./MovieCard"
 import { EmptyState } from "./ui"
+import { MovieCardSkeleton } from "./Skeletons"
 
 /** Searchable, genre-filterable grid of movies. */
 export default function MovieGrid({ movies, loading }) {
@@ -56,12 +57,7 @@ export default function MovieGrid({ movies, loading }) {
 
       <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {loading
-          ? Array.from({ length: 10 }).map((_, i) => (
-              <div key={i}>
-                <div className="skeleton aspect-2/3" />
-                <div className="skeleton mt-3 h-5 w-3/4" />
-              </div>
-            ))
+          ? Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)
           : visible.map((m) => <MovieCard key={m.id} movie={m} />)}
       </div>
 

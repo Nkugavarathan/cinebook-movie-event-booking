@@ -4,7 +4,8 @@ import { CalendarClock, ChevronRight, MapPin, Ticket } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
-import { EmptyState, PageLoader, StatusBadge } from "../components/ui"
+import { BookingListSkeleton } from "../components/Skeletons"
+import { EmptyState, StatusBadge } from "../components/ui"
 import { longDate, money, parseDateTime, showStartsAt, time12 } from "../lib/format"
 
 const TABS = [
@@ -26,7 +27,7 @@ export default function MyBookings() {
       })
   }, [])
 
-  if (!bookings) return <PageLoader />
+  if (!bookings) return <BookingListSkeleton />
 
   const now = new Date()
   const groups = {

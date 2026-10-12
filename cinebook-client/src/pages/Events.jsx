@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import EventCard from "../components/EventCard"
 import { EmptyState } from "../components/ui"
+import { EventCardSkeleton } from "../components/Skeletons"
 
 export default function Events() {
   const [events, setEvents] = useState([])
@@ -52,7 +53,7 @@ export default function Events() {
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading
-          ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-80" />)
+          ? Array.from({ length: 8 }).map((_, i) => <EventCardSkeleton key={i} />)
           : visible.map((e) => <EventCard key={e.id} event={e} />)}
       </div>
       {!loading && visible.length === 0 && (

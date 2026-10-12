@@ -4,7 +4,8 @@ import { ArrowLeft, CalendarX, Clock, Clapperboard, Globe, MapPin, Play, Users }
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
-import { EmptyState, PageLoader } from "../components/ui"
+import { DetailSkeleton } from "../components/Skeletons"
+import { EmptyState } from "../components/ui"
 import { dayChip, longDate, money, parseDate, runtime, time12 } from "../lib/format"
 
 export default function MovieDetail() {
@@ -46,7 +47,7 @@ export default function MovieDetail() {
       </div>
     )
   }
-  if (!data) return <PageLoader />
+  if (!data) return <DetailSkeleton />
 
   const m = data.movie
 

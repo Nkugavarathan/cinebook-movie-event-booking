@@ -7,7 +7,8 @@ import { useAuth } from "../context/AuthContext"
 import SeatMap, { SeatLegend } from "../components/SeatMap"
 import { SEAT_TYPES } from "../lib/seatTypes"
 import Poster from "../components/Poster"
-import { EmptyState, PageLoader, Spinner } from "../components/ui"
+import { SeatMapSkeleton } from "../components/Skeletons"
+import { EmptyState, Spinner } from "../components/ui"
 import { listingPath, longDate, money, time12 } from "../lib/format"
 
 const draftKey = (id) => `cinebook_seats_${id}`
@@ -98,7 +99,7 @@ export default function SeatSelection() {
       </div>
     )
   }
-  if (!map) return <PageLoader label="Loading seat map..." />
+  if (!map) return <SeatMapSkeleton />
 
   const st = map.showtime
   const prices = { STANDARD: st.priceStandard, PREMIUM: st.pricePremium, VIP: st.priceVip }

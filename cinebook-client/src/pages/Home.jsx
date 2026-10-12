@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { Armchair, ArrowRight, Clock, CreditCard, MapPin, Play, QrCode, Ticket } from "lucide-react"
+import { ArrowRight, Clock, MapPin, Play, Ticket } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import MovieGrid from "../components/MovieGrid"
 import EventCard from "../components/EventCard"
+import { EventCardSkeleton } from "../components/Skeletons"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
+import HowItWorks from "../components/HowItWorks"
 import { runtime } from "../lib/format"
 
 export default function Home() {
@@ -119,43 +121,27 @@ export default function Home() {
       </section>
 
       {/* Events */}
-      {events.length > 0 && (
+      {(loading || events.length > 0) && (
         <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <h2 className="font-display text-3xl font-bold tracking-tight">Upcoming events</h2>
-              <p className="mt-1 text-muted">Concerts, comedy, theatre and more — with reserved seating.</p>
+              <p className="mt-1 text-muted">Concerts, comedy, theatre and more - with reserved seating.</p>
             </div>
             <Link to="/events" className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-brand hover:underline sm:flex">
               View all <ArrowRight size={16} />
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {events.slice(0, 4).map((e) => <EventCard key={e.id} event={e} />)}
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <EventCardSkeleton key={i} />)
+              : events.slice(0, 4).map((e) => <EventCard key={e.id} event={e} />)}
           </div>
           <Link to="/events" className="btn-ghost mt-6 w-full sm:hidden">View all events</Link>
         </section>
       )}
 
-      {/* How it works */}
-      <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            [Armchair, "Choose your seat", "See the live seat map and pick exactly where you want to sit. Seats are held for you while you pay."],
-            [CreditCard, "Pay securely", "Checkout is handled by Stripe. We never see or store your card details."],
-            [QrCode, "Show your QR ticket", "Your e-ticket arrives instantly. Show the QR code at the entrance and enjoy the show."],
-          ].map(([Icon, title, text], i) => (
-            <div key={title} className="card relative overflow-hidden p-6">
-              <span className="absolute right-5 top-4 font-display text-6xl font-extrabold text-surface-2">{i + 1}</span>
-              <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-brand-soft text-brand">
-                <Icon size={22} />
-              </span>
-              <h3 className="relative mt-4 font-display text-lg font-semibold">{title}</h3>
-              <p className="relative mt-1 text-sm text-muted">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <HowItWorks />
 
       {/* Theaters */}
       {theaters.length > 0 && (

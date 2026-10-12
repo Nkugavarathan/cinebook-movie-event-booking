@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                 {m.posterUrl ? <img src={m.posterUrl} alt="" className="h-12 w-8 rounded object-cover" /> : <div className="h-12 w-8 rounded bg-surface-2" />}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{m.title}</p>
-                  <p className="text-xs text-muted">{m.kind === "EVENT" ? "Event" : "Movie"} · {m.tickets} tickets</p>
+                  <p className="text-xs text-muted">{m.kind === "EVENT" ? "Event" : "Movie"} Â· {m.tickets} tickets</p>
                 </div>
                 <span className="text-sm font-semibold tabular-nums">{money(m.revenue, d.currency)}</span>
               </div>

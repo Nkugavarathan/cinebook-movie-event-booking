@@ -5,7 +5,8 @@ import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import BookingSummary from "../components/BookingSummary"
 import Countdown from "../components/Countdown"
-import { EmptyState, PageLoader, Spinner } from "../components/ui"
+import { CheckoutSkeleton } from "../components/Skeletons"
+import { EmptyState, Spinner } from "../components/ui"
 import { money, parseDateTime } from "../lib/format"
 
 export default function Checkout() {
@@ -62,7 +63,7 @@ export default function Checkout() {
       </div>
     )
   }
-  if (!booking) return <PageLoader />
+  if (!booking) return <CheckoutSkeleton />
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">

@@ -10,7 +10,7 @@ export default function MovieCard({ movie }) {
         <Poster src={movie.posterUrl} title={movie.title} className="h-full w-full transition duration-500 group-hover:scale-105" />
         <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/10 to-transparent opacity-80 transition group-hover:opacity-100" />
         {movie.certificate && (
-          <span className="absolute left-3 top-3 rounded-md border border-white/20 bg-black/50 px-2 py-0.5 text-[11px] font-bold tracking-wide backdrop-blur">
+          <span className="absolute left-3 top-3 rounded-md border border-white/40 bg-black/75 px-2 py-0.5 text-[11px] font-bold tracking-wide text-white shadow-md shadow-black/40 backdrop-blur-sm">
             {movie.certificate}
           </span>
         )}

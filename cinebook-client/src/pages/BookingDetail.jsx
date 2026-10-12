@@ -4,7 +4,8 @@ import { QRCodeSVG } from "qrcode.react"
 import { AlertTriangle, ArrowLeft, Printer } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
-import { EmptyState, PageLoader, StatusBadge } from "../components/ui"
+import { TicketSkeleton } from "../components/Skeletons"
+import { EmptyState, StatusBadge } from "../components/ui"
 import { dateTimeShort, longDate, money, time12 } from "../lib/format"
 
 export default function BookingDetail() {
@@ -23,7 +24,7 @@ export default function BookingDetail() {
       </div>
     )
   }
-  if (!b) return <PageLoader />
+  if (!b) return <TicketSkeleton />
 
   const st = b.showtime
   const confirmed = b.status === "CONFIRMED"
