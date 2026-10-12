@@ -49,6 +49,7 @@ public class PaymentService {
     private final StripeGateway stripe;
     private final CurrentUser currentUser;
     private final DtoMapper mapper;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     @Value("${app.client-url}")
     private String clientUrl;
@@ -244,6 +245,8 @@ public class PaymentService {
         booking.setStripePaymentIntentId(paymentIntent);
         booking.setCancelledAt(null);
         bookingRepo.saveAndFlush(booking);
+        // Ticket email goes out after this transaction commits (see TicketMailService).
+        events.publishEvent(new BookingConfirmedEvent(booking.getId()));
         log.info("Booking {} CONFIRMED ({} {})", booking.getReference(), booking.getTotalAmount(), booking.getCurrency());
     }
 

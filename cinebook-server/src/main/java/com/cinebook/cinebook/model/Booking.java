@@ -67,4 +67,7 @@ public class Booking {
 
     /** CUSTOMER, ADMIN or SYSTEM (late payment) - who cancelled / refunded. */
     private String cancelledBy;
+
+    /** When the PDF ticket was last emailed (null = not sent yet / email disabled). */
+    private LocalDateTime ticketEmailedAt;
 }

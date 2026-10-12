@@ -48,7 +48,7 @@ export default function PaymentSuccess() {
 
   if (booking.status === "CONFIRMED") {
     return (
-      <Result icon={CheckCircle2} tone="text-emerald-400 bg-emerald-500/10" title="You're all set!" text={`Payment received. Booking ${booking.reference} is confirmed for ${booking.showtime.movieTitle}.`}>
+      <Result icon={CheckCircle2} tone="text-emerald-400 bg-emerald-500/10" title="You're all set!" text={`Payment received. Booking ${booking.reference} is confirmed for ${booking.showtime.movieTitle}. Your ticket PDF is on its way to ${booking.contactEmail || "your email"}.`}>
         <Link to={`/bookings/${booking.id}`} className="btn-primary">View my ticket</Link>
         <Link to="/" className="btn-ghost">Back to home</Link>
       </Result>

@@ -32,5 +32,6 @@ public record BookingResponseDTO(
         LocalDateTime refundDeadline,
         /** Refunded amount, or for a refundable booking the amount they would get back. */
         BigDecimal refundAmount,
-        String cancelledBy) {
+        String cancelledBy,
+        LocalDateTime ticketEmailedAt) {
 }

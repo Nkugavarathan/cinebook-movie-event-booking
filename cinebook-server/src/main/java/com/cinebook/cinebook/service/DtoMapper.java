@@ -85,6 +85,7 @@ public class DtoMapper {
                 b.getStatus() == BookingStatus.CONFIRMED ? refundPolicy.deadline(b) : null,
                 b.getRefundAmount() != null ? b.getRefundAmount()
                         : b.getStatus() == BookingStatus.CONFIRMED ? refundPolicy.customerRefundAmount(b) : null,
-                b.getCancelledBy());
+                b.getCancelledBy(),
+                b.getTicketEmailedAt());
     }
 }

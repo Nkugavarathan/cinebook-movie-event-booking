@@ -1,18 +1,49 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
-import { AlertTriangle, ArrowLeft, Printer } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Download, Mail, Printer } from "lucide-react"
+import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import RefundPanel from "../components/RefundPanel"
 import { TicketSkeleton } from "../components/Skeletons"
-import { EmptyState, StatusBadge } from "../components/ui"
+import { EmptyState, Spinner, StatusBadge } from "../components/ui"
 import { dateTimeShort, longDate, money, time12 } from "../lib/format"
 
 export default function BookingDetail() {
   const { id } = useParams()
   const [b, setB] = useState(null)
   const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(null) // "pdf" | "email"
+
+  const downloadPdf = async () => {
+    setBusy("pdf")
+    try {
+      const res = await api.get(`/bookings/${id}/ticket.pdf`, { responseType: "blob" })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `CineBook-${b.reference}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not download the ticket"))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const emailTicket = async () => {
+    setBusy("email")
+    try {
+      const res = await api.post(`/bookings/${id}/email-ticket`)
+      toast.success(res.data.message)
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not send the email"))
+    } finally {
+      setBusy(null)
+    }
+  }
 
   useEffect(() => {
     api.get(`/bookings/${id}`).then((res) => setB(res.data)).catch((err) => setError(errorMessage(err, "Booking not found")))
@@ -35,7 +66,15 @@ export default function BookingDetail() {
       <div className="no-print mb-6 flex items-center justify-between">
         <Link to="/bookings" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft size={16} /> My tickets</Link>
         {confirmed && (
-          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><Printer size={16} /> Print</button>
+          <div className="flex items-center gap-4 text-sm">
+            <button onClick={downloadPdf} disabled={!!busy} className="inline-flex items-center gap-1.5 text-muted hover:text-ink disabled:opacity-50">
+              {busy === "pdf" ? <Spinner size={15} /> : <Download size={16} />} PDF
+            </button>
+            <button onClick={emailTicket} disabled={!!busy} className="inline-flex items-center gap-1.5 text-muted hover:text-ink disabled:opacity-50">
+              {busy === "email" ? <Spinner size={15} /> : <Mail size={16} />} Email
+            </button>
+            <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-muted hover:text-ink"><Printer size={16} /> Print</button>
+          </div>
         )}
       </div>
 
@@ -87,6 +126,11 @@ export default function BookingDetail() {
             <span className="font-display text-lg font-bold">{money(b.totalAmount, b.currency)}</span>
           </div>
           {b.confirmedAt && <p className="mt-1 w-full text-right text-xs text-faint">Booked {dateTimeShort(b.confirmedAt)}</p>}
+          {confirmed && b.ticketEmailedAt && (
+            <p className="no-print mt-1 w-full text-right text-xs text-faint">
+              Ticket emailed to {b.contactEmail || "you"} · {dateTimeShort(b.ticketEmailedAt)}
+            </p>
+          )}
         </div>
       </div>
 
