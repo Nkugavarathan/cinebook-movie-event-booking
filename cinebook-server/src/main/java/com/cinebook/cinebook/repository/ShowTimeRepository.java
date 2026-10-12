@@ -31,7 +31,7 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Long> {
             where (:movieId is null or st.movie.id = :movieId)
               and (:theaterId is null or st.screen.theater.id = :theaterId)
               and (:date is null or st.showDate = :date)
-            order by st.showDate desc, st.startTime desc
+            order by st.showDate, st.startTime
             """)
     List<ShowTime> search(@Param("movieId") Long movieId,
                           @Param("theaterId") Long theaterId,

@@ -1,0 +1,15 @@
+export const EMPTY_MOVIE = {
+  title: "",
+  description: "",
+  posterUrl: "",
+  backdropUrl: "",
+  trailerUrl: "",
+  duration: "",
+  genre: "",
+  language: "English",
+  certificate: "",
+  director: "",
+  castMembers: "",
+  releaseDate: "",
+  active: true,
+}

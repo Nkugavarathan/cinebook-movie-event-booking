@@ -36,24 +36,26 @@ body {
   color: white;
 }
 
-.btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-semibold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-600 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50;
-}
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-semibold text-white shadow-lg shadow-brand/25 transition hover:bg-brand-600 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
 
-.btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-3 font-semibold text-ink transition hover:border-faint hover:bg-surface active:scale-[.98] disabled:opacity-50;
-}
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-3 font-semibold text-ink transition hover:border-faint hover:bg-surface active:scale-[.98] disabled:opacity-50;
+  }
 
-.input {
-  @apply w-full rounded-xl border border-line bg-surface-2 px-4 py-3 text-ink placeholder:text-faint outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15;
-}
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface-2 px-4 py-3 text-ink placeholder:text-faint outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15;
+  }
 
-.card {
-  @apply rounded-2xl border border-line bg-surface;
-}
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
 
-.skeleton {
-  @apply animate-pulse rounded-xl bg-surface-2;
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-surface-2;
+  }
 }
 
 /* Seat that someone else is paying for */

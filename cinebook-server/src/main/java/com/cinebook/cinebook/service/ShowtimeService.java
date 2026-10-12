@@ -59,10 +59,7 @@ public class ShowtimeService {
             if (!LocalDateTime.of(req.showDate(), start).isAfter(now)) {
                 throw ApiException.badRequest("Showtime " + start.format(HH_MM) + " on " + req.showDate() + " is in the past");
             }
-            LocalTime end = start.plusMinutes(movie.getDuration());
-            if (end.isBefore(start)) {
-                end = LocalTime.of(23, 59); // runs past midnight
-            }
+            LocalTime end = start.plusMinutes(movie.getDuration()); // may wrap past midnight
             ShowTime candidate = ShowTime.builder()
                     .showDate(req.showDate())
                     .startTime(start)
@@ -117,12 +114,15 @@ public class ShowtimeService {
     }
 
     private static boolean overlaps(ShowTime a, ShowTime b) {
-        LocalTime aEnd = a.getEndTime().plusMinutes(TURNAROUND_MINUTES);
-        LocalTime bEnd = b.getEndTime().plusMinutes(TURNAROUND_MINUTES);
-        // plusMinutes wraps past midnight; treat wrapped ends as end of day
-        if (aEnd.isBefore(a.getEndTime())) aEnd = LocalTime.MAX;
-        if (bEnd.isBefore(b.getEndTime())) bEnd = LocalTime.MAX;
-        return a.getStartTime().isBefore(bEnd) && b.getStartTime().isBefore(aEnd);
+        return a.getStartTime().isBefore(blockedUntil(b)) && b.getStartTime().isBefore(blockedUntil(a));
+    }
+
+    /** End of the show plus turnaround, capped at midnight for shows that run into the next day. */
+    private static LocalTime blockedUntil(ShowTime st) {
+        LocalTime end = st.getEndTime();
+        if (end == null || end.isBefore(st.getStartTime())) return LocalTime.MAX;
+        LocalTime withGap = end.plusMinutes(TURNAROUND_MINUTES);
+        return withGap.isBefore(end) ? LocalTime.MAX : withGap;
     }
 
     private static BigDecimal money(BigDecimal v) {

@@ -104,7 +104,7 @@ export default function MoviesList() {
                       <div className="flex justify-end gap-1">
                         <Link to={`/admin/showtimes/add?movieId=${m.id}`} className="btn-icon" title="Schedule showtimes"><CalendarPlus size={17} /></Link>
                         <Link to={`/admin/movies/edit/${m.id}`} className="btn-icon" title="Edit"><Pencil size={17} /></Link>
-                        <button onClick={() => setToDelete(m)} className="btn-icon hover:!text-red-600" title="Delete"><Trash2 size={17} /></button>
+                        <button onClick={() => setToDelete(m)} className="btn-icon hover:text-red-600!" title="Delete"><Trash2 size={17} /></button>
                       </div>
                     </td>
                   </tr>

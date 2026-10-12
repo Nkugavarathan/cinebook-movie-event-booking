@@ -3,21 +3,6 @@ import { Link } from "react-router-dom"
 import { Film } from "lucide-react"
 import { Spinner } from "../../../components/ui"
 
-export const EMPTY_MOVIE = {
-  title: "",
-  description: "",
-  posterUrl: "",
-  backdropUrl: "",
-  trailerUrl: "",
-  duration: "",
-  genre: "",
-  language: "English",
-  certificate: "",
-  director: "",
-  castMembers: "",
-  releaseDate: "",
-  active: true,
-}
 
 const CERTS = ["", "G", "PG", "PG-13", "R", "NC-17", "U", "U/A", "A"]
 

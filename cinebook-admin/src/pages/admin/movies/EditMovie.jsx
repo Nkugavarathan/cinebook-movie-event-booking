@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import api, { errorMessage } from "../../../api/axios"
-import MovieForm, { EMPTY_MOVIE } from "./MovieForm"
+import MovieForm from "./MovieForm"
+import { EMPTY_MOVIE } from "./movieDefaults"
 import { PageHeader } from "../../../components/ui"
 
 export default function EditMovie() {
