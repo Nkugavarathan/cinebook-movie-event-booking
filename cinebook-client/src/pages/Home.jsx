@@ -1,158 +1,168 @@
-import React, { useEffect, useState } from "react"
-import EventCard from "../components/EventCard"
-import MovieCard from "../components/MovieCard"
-import api from "../services/api"
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import { Armchair, Clock, CreditCard, MapPin, Play, QrCode, Ticket } from "lucide-react"
+import { toast } from "sonner"
+import api, { errorMessage } from "../services/api"
+import MovieGrid from "../components/MovieGrid"
+import Poster from "../components/Poster"
+import TrailerModal from "../components/TrailerModal"
+import { runtime } from "../lib/format"
 
-function Home() {
-  const [movie, setMovies] = useState([])
-  const [event, setEvents] = useState([])
+export default function Home() {
+  const [movies, setMovies] = useState([])
+  const [theaters, setTheaters] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [heroIndex, setHeroIndex] = useState(0)
+  const [trailer, setTrailer] = useState(null)
 
   useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const response = await api.get("/movies")
-        setMovies(response.data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
-    fetchMovie()
+    Promise.all([api.get("/movies"), api.get("/theaters")])
+      .then(([m, t]) => {
+        setMovies(m.data)
+        setTheaters(t.data)
+      })
+      .catch((err) => toast.error(errorMessage(err, "Could not load movies")))
+      .finally(() => setLoading(false))
   }, [])
 
-  const movies = [
-    {
-      id: 1,
-      title: "Avatar 2",
-      poster:
-        "https://m.media-amazon.com/images/S/pv-target-images/48448d3f65992c3c9da909933f7fa659efe20d88becd4b62459bc62e0da1889a.jpg",
-      description: "Epic sci-fi movie",
-    },
-    {
-      id: 2,
-      title: "The Batman",
-      poster: "/batman.jpg",
-      description: "Dark superhero film",
-    },
-    {
-      id: 3,
-      title: "Oppenheimer",
-      poster: "/oppenheimer.jpg",
-      description: "Historical drama",
-    },
-    {
-      id: 4,
-      title: "Spider-Man",
-      poster: "/spiderman.jpg",
-      description: "Action adventure",
-    },
-  ]
+  const featured = movies.filter((m) => m.upcomingShows > 0).slice(0, 5)
+  const hero = featured[heroIndex] || movies[0]
 
-  const events = [
-    {
-      id: 1,
-      title: "Neon Concert",
-      poster:
-        "https://m.media-amazon.com/images/S/pv-target-images/48448d3f65992c3c9da909933f7fa659efe20d88becd4b62459bc62e0da1889a.jpg",
-      date: "2025-12-05",
-    },
-    { id: 2, title: "Hamlet Play", poster: "/play.jpg", date: "2025-12-08" },
-    { id: 3, title: "Comedy Night", poster: "/comedy.jpg", date: "2025-12-10" },
-    { id: 4, title: "Jazz Festival", poster: "/jazz.jpg", date: "2025-12-15" },
-  ]
+  useEffect(() => {
+    if (featured.length < 2) return
+    const t = setInterval(() => setHeroIndex((i) => (i + 1) % featured.length), 7000)
+    return () => clearInterval(t)
+  }, [featured.length])
+
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-gray-50">
-      {/* hero section */}
-      <section className="relative w-full h-[90vh] flex items-center justify-center text-center ">
-        <img
-          src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop"
-          alt="Cinema Background"
-          className="absolute inset-0 z-0 w-full h-full object-cover"
-        />
-        {/* Gradient Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
-
-        {/* Hero Content */}
-        <div className="relative z-20 max-w-4xl animate-fade-in-up">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
-            Book Movies & Events <br />
-            <span className="text-[#8CE4FF]">Instantly</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto font-light">
-            Experience your favorite shows with ease, comfort, and safety. Your
-            next memory is just a click away.
-          </p>
-
-          <div className="flex gap-4 justify-center">
-            <button className="bg-[#FF5656] hover:bg-[#CD2C58] text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              Browse Now
-            </button>
-            <button className="bg-transparent border-2 border-white hover:bg-white hover:text-black text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300">
-              Learn More
-            </button>
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        {hero ? (
+          <div key={hero.id} className="absolute inset-0 animate-[fadeIn_.8s_ease]">
+            <img src={hero.backdropUrl || hero.posterUrl} alt="" className="h-full w-full scale-110 object-cover opacity-40 blur-2xl" />
           </div>
+        ) : (
+          <div className="absolute inset-0 bg-linear-to-br from-brand/20 to-bg" />
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-bg via-bg/70 to-bg/30" />
+        <div className="absolute inset-0 bg-linear-to-r from-bg via-bg/40 to-transparent" />
+
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1fr_auto] md:py-24">
+          {loading ? (
+            <div className="space-y-4">
+              <div className="skeleton h-6 w-40" />
+              <div className="skeleton h-16 w-3/4" />
+              <div className="skeleton h-20 w-full max-w-xl" />
+            </div>
+          ) : hero ? (
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" /> Now showing
+              </span>
+              <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">{hero.title}</h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+                {hero.certificate && <span className="rounded border border-line px-1.5 py-0.5 text-xs font-bold text-ink">{hero.certificate}</span>}
+                <span>{hero.genre}</span>
+                {hero.duration > 0 && <span className="flex items-center gap-1"><Clock size={14} />{runtime(hero.duration)}</span>}
+                {hero.language && <span>{hero.language}</span>}
+              </div>
+              <p className="mt-5 line-clamp-3 max-w-xl text-base text-muted sm:text-lg">{hero.description}</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to={`/movies/${hero.id}`} className="btn-primary px-7">
+                  <Ticket size={18} /> Book tickets
+                </Link>
+                {hero.trailerUrl && (
+                  <button onClick={() => setTrailer(hero.trailerUrl)} className="btn-ghost px-6">
+                    <Play size={18} /> Watch trailer
+                  </button>
+                )}
+              </div>
+              {featured.length > 1 && (
+                <div className="mt-10 flex gap-2">
+                  {featured.map((m, i) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setHeroIndex(i)}
+                      aria-label={`Show ${m.title}`}
+                      className={`h-1.5 rounded-full transition-all ${i === heroIndex ? "w-10 bg-brand" : "w-5 bg-line hover:bg-faint"}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="max-w-2xl">
+              <h1 className="font-display text-5xl font-extrabold tracking-tight">Movies, booked in seconds.</h1>
+              <p className="mt-4 text-lg text-muted">No movies are showing yet. Check back soon!</p>
+            </div>
+          )}
+
+          {hero && (
+            <Link to={`/movies/${hero.id}`} className="hidden w-64 rotate-2 overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60 transition hover:rotate-0 md:block lg:w-72">
+              <Poster src={hero.posterUrl} title={hero.title} className="aspect-2/3 w-full" />
+            </Link>
+          )}
         </div>
       </section>
 
-      {/* Movie section  */}
-      <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto w-full">
-        <div className="flex justify-between items-end mb-10 border-b border-gray-200 pb-4">
-          <div>
-            <h2 className="text-4xl font-bold text-gray-900">Now Showing</h2>
-            <p className="text-gray-500 mt-2">
-              Catch the latest blockbusters playing near you
-            </p>
-          </div>
-          <a
-            href="/movies"
-            className="text-[#CD2C58] font-semibold hover:underline hidden sm:block"
-          >
-            View All
-          </a>
+      {/* Movies */}
+      <section id="now-showing" className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+        <div className="mb-6">
+          <h2 className="font-display text-3xl font-bold tracking-tight">Now showing</h2>
+          <p className="mt-1 text-muted">Pick a movie, choose your seats, and you're in.</p>
         </div>
+        <MovieGrid movies={movies} loading={loading} />
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {movie.map((movie) => (
-            <div
-              key={movie.id}
-              className="transform transition-all duration-300 hover:-translate-y-2"
-            >
-              <MovieCard movie={movie} />
+      {/* How it works */}
+      <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            [Armchair, "Choose your seat", "See the live seat map and pick exactly where you want to sit. Seats are held for you while you pay."],
+            [CreditCard, "Pay securely", "Checkout is handled by Stripe. We never see or store your card details."],
+            [QrCode, "Show your QR ticket", "Your e-ticket arrives instantly. Show the QR code at the entrance and enjoy the show."],
+          ].map(([Icon, title, text], i) => (
+            <div key={title} className="card relative overflow-hidden p-6">
+              <span className="absolute right-5 top-4 font-display text-6xl font-extrabold text-surface-2">{i + 1}</span>
+              <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-brand-soft text-brand">
+                <Icon size={22} />
+              </span>
+              <h3 className="relative mt-4 font-display text-lg font-semibold">{title}</h3>
+              <p className="relative mt-1 text-sm text-muted">{text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Event section */}
-      <section className="py-20 px-6 md:px-12 bg-[#ECD5BC] w-full">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-[#CD2C58]">
-              Upcoming Events
-            </h2>
-            <p className="text-gray-800 mt-3 text-lg">
-              Concerts, Plays, and Stand-up Comedy
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 group"
-              >
-                <EventCard event={event} />
-                <div className="p-4 bg-white group-hover:bg-[#C2E2FA] transition-colors duration-300">
-                  <button className="w-full text-[#CD2C58] font-bold text-sm uppercase tracking-wider">
-                    Get Tickets
-                  </button>
+      {/* Theaters */}
+      {theaters.length > 0 && (
+        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
+          <h2 className="font-display text-3xl font-bold tracking-tight">Our cinemas</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {theaters.map((t) => (
+              <div key={t.id} className="card p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-lg font-semibold">{t.name}</h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-muted"><MapPin size={14} />{t.address || t.city}</p>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted">{t.city}</span>
                 </div>
+                {t.facilities && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {t.facilities.split(",").map((f) => f.trim()).filter(Boolean).map((f) => (
+                      <span key={f} className="rounded-md border border-line px-2 py-0.5 text-xs text-muted">{f}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {trailer && <TrailerModal url={trailer} onClose={() => setTrailer(null)} />}
     </div>
   )
 }
-
-export default Home

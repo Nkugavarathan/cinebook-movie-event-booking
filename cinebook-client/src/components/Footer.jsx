@@ -1,11 +1,40 @@
-import React from "react"
+import { Link } from "react-router-dom"
+import { Clapperboard, Lock, ShieldCheck, Ticket } from "lucide-react"
 
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="bg-primary text-black py-6 mt-auto text-center">
-      <p>&copy; 2025 CineBook. All rights reserved.</p>
+    <footer className="mt-20 border-t border-line bg-surface/50">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
+        <div className="md:col-span-2">
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-linear-to-br from-brand to-amber-500">
+              <Clapperboard size={16} className="text-white" />
+            </span>
+            <span className="font-display text-lg font-bold">CineBook</span>
+          </div>
+          <p className="mt-3 max-w-sm text-sm text-muted">
+            Pick your seat, pay securely and walk in with a QR ticket. Your next movie night is a few taps away.
+          </p>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold">Explore</h4>
+          <ul className="mt-3 space-y-2 text-sm text-muted">
+            <li><Link className="hover:text-ink" to="/movies">Now showing</Link></li>
+            <li><Link className="hover:text-ink" to="/bookings">My tickets</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold">Why CineBook</h4>
+          <ul className="mt-3 space-y-2 text-sm text-muted">
+            <li className="flex items-center gap-2"><Lock size={14} /> Payments by Stripe</li>
+            <li className="flex items-center gap-2"><ShieldCheck size={14} /> Seats locked while you pay</li>
+            <li className="flex items-center gap-2"><Ticket size={14} /> Instant QR e-tickets</li>
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-line py-5 text-center text-xs text-faint">
+        © {new Date().getFullYear()} CineBook. All rights reserved.
+      </div>
     </footer>
   )
 }
-
-export default Footer

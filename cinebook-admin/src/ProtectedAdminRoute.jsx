@@ -1,13 +1,14 @@
-import { Navigate } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { useAuth } from "./context/AuthContext"
 
-const ProtectedAdminRoute = ({ children }) => {
-  const token = localStorage.getItem("token")
-  const role = localStorage.getItem("role")
+const ProtectedAdminRoute = () => {
+  const { token, user } = useAuth()
+  const location = useLocation()
 
-  if (!token) return <Navigate to="/login" />
-  if (role !== "ADMIN") return <Navigate to="/" />
-
-  return children
+  if (!token || user?.role !== "ADMIN") {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return <Outlet />
 }
 
 export default ProtectedAdminRoute

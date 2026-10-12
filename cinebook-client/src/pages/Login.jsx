@@ -1,65 +1,59 @@
-import { useState, useContext } from "react"
-import { AuthContext } from "../context/AuthContext"
-import api from "../services/api.js"
-import { useNavigate, Link } from "react-router-dom"
+import { useState } from "react"
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import { useAuth } from "../context/AuthContext"
+import { errorMessage } from "../services/api"
+import AuthLayout from "../components/AuthLayout"
+import { Spinner } from "../components/ui"
 
 export default function Login() {
-  const { login } = useContext(AuthContext)
+  const { login, isAuthed } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from || "/"
   const [data, setData] = useState({ email: "", password: "" })
-  const [error, setError] = useState("") // for red error text
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  if (isAuthed) return <Navigate to={from} replace />
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError("")
+    setLoading(true)
     try {
-      const res = await api.post("/auth/login", data)
-      login(res.data.token)
-      navigate("/") // redirect
+      const user = await login(data.email, data.password)
+      toast.success(`Welcome back, ${user.name}!`)
+      navigate(from, { replace: true })
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed")
+      setError(errorMessage(err, "Login failed"))
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen bg-blue-50">
-      <div className="flex-1 hidden lg:block">
-        <img src="/login.png" alt="" />
-      </div>
-      <div className="flex-1 flex items-center justify-center p-6">
-        <form
-          className="w-full max-w-sm p-8 rounded-2xl shadow-xl"
-          onSubmit={handleSubmit}
-        >
-          <h2 className="text-3xl font-bold text-red-600 mb-6">Login</h2>
-
-          {error && <p className="text-red-500 mb-4 font-semibold">{error}</p>}
-
-          <input
-            type="email"
-            placeholder="Email"
-            className="border border-red-300 focus:border-red-500 focus:ring focus:ring-blue-200 p-2 mb-4 w-72 rounded"
-            onChange={(e) => setData({ ...data, email: e.target.value })}
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            className="border border-red-300 focus:border-red-500 focus:ring focus:ring-blue-200 p-2 mb-4 w-72 rounded"
-            onChange={(e) => setData({ ...data, password: e.target.value })}
-          />
-
-          <button className="bg-red-500 w-full text-white px-6 py-2 rounded hover:bg-red-600 cursor-pointer transition-colors">
-            Login
-          </button>
-
-          <p className="text-sm text-gray-600 mt-3">
-            Don’t have an account?{" "}
-            <Link to="/register" className="text-blue-600 hover:underline">
-              Register
-            </Link>
-          </p>
-        </form>
-      </div>
-    </div>
+    <AuthLayout title="Welcome back" subtitle="Sign in to book seats and see your tickets.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-sm text-brand">{error}</p>}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">Email</span>
+          <input type="email" required autoComplete="email" className="input" placeholder="you@example.com"
+            value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium">Password</span>
+          <input type="password" required autoComplete="current-password" className="input" placeholder="••••••••"
+            value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
+        </label>
+        <button disabled={loading} className="btn-primary w-full">
+          {loading && <Spinner size={18} />} Sign in
+        </button>
+        <p className="text-center text-sm text-muted">
+          New to CineBook?{" "}
+          <Link to="/register" state={location.state} className="font-semibold text-brand hover:underline">Create an account</Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }

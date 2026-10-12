@@ -1,103 +1,112 @@
-import React, { useState, useContext } from "react"
-import { Link } from "react-router-dom"
-import { Menu, X } from "lucide-react" // Import the icons
-import { AuthContext } from "../context/AuthContext"
-import { logout } from "./../services/authService"
-const Navbar = () => {
-  const { token, logout } = useContext(AuthContext)
-  const [isOpen, setIsOpen] = useState(false)
+import { useEffect, useRef, useState } from "react"
+import { Link, NavLink, useNavigate } from "react-router-dom"
+import { Clapperboard, LogOut, Menu, Ticket, User, X } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen)
+const linkClass = ({ isActive }) =>
+  `rounded-lg px-3 py-2 text-sm font-medium transition ${isActive ? "text-ink bg-surface-2" : "text-muted hover:text-ink"}`
+
+export default function Navbar() {
+  const { user, isAuthed, logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const menuRef = useRef(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const close = (e) => menuRef.current && !menuRef.current.contains(e.target) && setMenu(false)
+    document.addEventListener("mousedown", close)
+    return () => document.removeEventListener("mousedown", close)
+  }, [])
+
+  const doLogout = () => {
+    logout()
+    setMenu(false)
+    setOpen(false)
+    navigate("/")
   }
 
-  const NavLinks = (
-    <>
-      <li>
-        <Link
-          to="/"
-          className="hover:text-[#FF5656] font-semibold transition duration-200"
-          onClick={() => setIsOpen(false)} //close menu
-        >
-          Home
-        </Link>
-      </li>
-      {/* <li>
-        <Link
-          to="/about"
-          className="hover:text-[#FF5656] font-semibold transition duration-200"
-          onClick={() => setIsOpen(false)}
-        >
-          About
-        </Link>
-      </li> */}
-      {token ? (
-        <p
-          onClick={logout}
-          className="hover:text-[#FF5656]font-semibold transition duration-200 cursor-pointer"
-        >
-          Logout
-        </p>
-      ) : (
-        <li>
-          <Link
-            to="/login"
-            className="hover:text-[#FF5656] font-semibold transition duration-200"
-            onClick={() => setIsOpen(false)}
-          >
-            Login
-          </Link>
-        </li>
-      )}
-
-      {/*
-      <li>
-        <Link
-          to="/book"
-          className="bg-[#CD2C58] text-white px-3 py-1.5 rounded hover:bg-[#FF5656] font-semibold transition duration-200"
-          onClick={() => setIsOpen(false)}
-        >
-          Book Ticket
-        </Link>
-      </li> */}
-    </>
-  )
-
   return (
-    <nav className="bg-[#8CE4FF] shadow-lg p-4 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="text-2xl font-extrabold text-[#CD2C58]">CineBook</div>
+    <nav className="sticky top-0 z-50 border-b border-line/60 bg-bg/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-linear-to-br from-brand to-amber-500 shadow-lg shadow-brand/30">
+            <Clapperboard size={18} className="text-white" />
+          </span>
+          <span className="font-display text-xl font-bold tracking-tight">
+            Cine<span className="text-brand">Book</span>
+          </span>
+        </Link>
 
-        {/* Hidden on small screens, shown as a flex row on medium screens and up */}
-        <ul className="hidden md:flex space-x-6 items-center text-gray-800">
-          {NavLinks}
-        </ul>
+        <div className="hidden items-center gap-1 md:flex">
+          <NavLink to="/" end className={linkClass}>Home</NavLink>
+          <NavLink to="/movies" className={linkClass}>Movies</NavLink>
+          {isAuthed && <NavLink to="/bookings" className={linkClass}>My Tickets</NavLink>}
+        </div>
 
-        {/* Mobile Menu Button  */}
-        {/* Shown on small screens, hidden on medium screens and up */}
-        <button
-          onClick={toggleMenu}
-          className="md:hidden text-gray-800 hover:text-[#CD2C58] transition duration-200 p-1"
-          aria-label="Toggle menu"
-        >
-          {/* switch  Menu and X icons */}
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        <div className="hidden md:block">
+          {isAuthed ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenu((m) => !m)}
+                className="flex items-center gap-2 rounded-full border border-line bg-surface-2 py-1 pl-1 pr-3 text-sm transition hover:border-faint"
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-xs font-bold text-white">
+                  {(user?.name || "U").charAt(0).toUpperCase()}
+                </span>
+                <span className="max-w-32 truncate">{user?.name}</span>
+              </button>
+              {menu && (
+                <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl">
+                  <div className="border-b border-line px-4 py-3">
+                    <p className="text-sm font-semibold">{user?.name}</p>
+                    <p className="truncate text-xs text-muted">{user?.email}</p>
+                  </div>
+                  <Link to="/bookings" onClick={() => setMenu(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink">
+                    <Ticket size={16} /> My tickets
+                  </Link>
+                  <button onClick={doLogout} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted hover:bg-surface-2 hover:text-ink">
+                    <LogOut size={16} /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link to="/login" className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:text-ink">Sign in</Link>
+              <Link to="/register" className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600">Get started</Link>
+            </div>
+          )}
+        </div>
+
+        <button className="rounded-lg p-2 text-muted hover:text-ink md:hidden" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/*  Mobile Menu Dropdown */}
-
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
-        }`}
-      >
-        <ul className="flex flex-col space-y-3 p-4 bg-white rounded-lg shadow-xl text-gray-800 border border-gray-100">
-          {NavLinks}
-        </ul>
-      </div>
+      {open && (
+        <div className="border-t border-line bg-surface px-4 py-3 md:hidden">
+          <div className="flex flex-col gap-1">
+            <NavLink to="/" end className={linkClass} onClick={() => setOpen(false)}>Home</NavLink>
+            <NavLink to="/movies" className={linkClass} onClick={() => setOpen(false)}>Movies</NavLink>
+            {isAuthed ? (
+              <>
+                <NavLink to="/bookings" className={linkClass} onClick={() => setOpen(false)}>My Tickets</NavLink>
+                <button onClick={doLogout} className="rounded-lg px-3 py-2 text-left text-sm font-medium text-muted hover:text-ink">
+                  Sign out ({user?.name})
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>
+                  <span className="inline-flex items-center gap-2"><User size={16} /> Sign in</span>
+                </NavLink>
+                <Link to="/register" onClick={() => setOpen(false)} className="btn-primary mt-2 py-2.5 text-sm">Create account</Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
-
-export default Navbar

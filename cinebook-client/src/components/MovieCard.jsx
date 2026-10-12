@@ -1,47 +1,37 @@
-import React from "react"
 import { Link } from "react-router-dom"
+import { Clock } from "lucide-react"
+import Poster from "./Poster"
+import { runtime } from "../lib/format"
 
-const MovieCard = ({ movie }) => {
-  console.log("Movies", movie)
+export default function MovieCard({ movie }) {
   return (
-    <div
-      className="bg-white rounded-xl shadow-xl overflow-hidden 
-                    transform transition-all duration-300 ease-in-out 
-                    hover:scale-[1.03] hover:shadow-2xl group"
-    >
-      <div className="relative overflow-hidden">
-        <img
-          src={movie.posterUrl}
-          alt={movie.title}
-          className="w-full h-72 object-cover 
-                     transition duration-500 group-hover:opacity-85"
-        />
-
-        <div className="absolute inset-0 bg-[#8CE4FF]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      </div>
-
-      <div className="p-5 flex flex-col justify-between h-auto">
-        <div className="mb-4">
-          <h3 className="text-2xl font-extrabold text-gray-800 mb-1 leading-snug">
-            {movie.title}
-          </h3>
-          <p className="text-gray-500 text-sm h-10 overflow-hidden">
-            {movie.description}
-          </p>
+    <Link to={`/movies/${movie.id}`} className="group block">
+      <div className="relative aspect-2/3 overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-black/30">
+        <Poster src={movie.posterUrl} title={movie.title} className="h-full w-full transition duration-500 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/10 to-transparent opacity-80 transition group-hover:opacity-100" />
+        {movie.certificate && (
+          <span className="absolute left-3 top-3 rounded-md border border-white/20 bg-black/50 px-2 py-0.5 text-[11px] font-bold tracking-wide backdrop-blur">
+            {movie.certificate}
+          </span>
+        )}
+        <div className="absolute inset-x-0 bottom-0 translate-y-2 p-4 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <span className="btn-primary w-full py-2.5 text-sm">
+            {movie.upcomingShows > 0 ? "Book tickets" : "View details"}
+          </span>
         </div>
-
-        <button
-          className="cursor-pointer w-full text-center inline-block 
-                     bg-[#FF5656] hover:bg-[#CD2C58] text-white 
-                     px-4 py-3 rounded-lg font-bold uppercase tracking-wider 
-                     transition duration-300 transform hover:scale-[1.01] 
-                     shadow-md hover:shadow-lg"
-        >
-          Book Tickets
-        </button>
       </div>
-    </div>
+      <div className="mt-3 px-1">
+        <h3 className="truncate font-display text-lg font-semibold group-hover:text-brand">{movie.title}</h3>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+          <span className="truncate">{movie.genre}</span>
+          {movie.duration > 0 && (
+            <>
+              <span className="text-faint">•</span>
+              <span className="flex shrink-0 items-center gap-1"><Clock size={12} />{runtime(movie.duration)}</span>
+            </>
+          )}
+        </div>
+      </div>
+    </Link>
   )
 }
-
-export default MovieCard
