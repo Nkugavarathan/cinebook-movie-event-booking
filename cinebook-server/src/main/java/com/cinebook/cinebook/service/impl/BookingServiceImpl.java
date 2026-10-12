@@ -59,8 +59,8 @@ public class BookingServiceImpl implements BookingService {
         if (!st.getStartsAt().isAfter(now)) {
             throw ApiException.badRequest("This show has already started");
         }
-        if (!st.getMovie().isActive()) {
-            throw ApiException.badRequest("Bookings for this movie are closed");
+        if (!st.isListingActive()) {
+            throw ApiException.badRequest("Bookings for this show are closed");
         }
         List<Long> seatIds = request.seatIds().stream().filter(Objects::nonNull).distinct().toList();
         if (seatIds.isEmpty()) {

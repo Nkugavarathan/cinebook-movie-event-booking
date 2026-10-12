@@ -12,6 +12,16 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Apply the saved / system theme before React renders to avoid a flash.
+      try {
+        var t = localStorage.getItem("cinebook_theme") ||
+          (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+        document.documentElement.dataset.theme = t
+      } catch (e) {
+        document.documentElement.dataset.theme = "dark"
+      }
+    </script>
     <title>CineBook – Movie Tickets</title>
   </head>
   <body>

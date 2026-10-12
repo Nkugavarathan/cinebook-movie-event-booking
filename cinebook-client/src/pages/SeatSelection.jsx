@@ -8,7 +8,7 @@ import SeatMap, { SeatLegend } from "../components/SeatMap"
 import { SEAT_TYPES } from "../lib/seatTypes"
 import Poster from "../components/Poster"
 import { EmptyState, PageLoader, Spinner } from "../components/ui"
-import { longDate, money, time12 } from "../lib/format"
+import { listingPath, longDate, money, time12 } from "../lib/format"
 
 const draftKey = (id) => `cinebook_seats_${id}`
 
@@ -110,7 +110,7 @@ export default function SeatSelection() {
       {/* Show header */}
       <div className="border-b border-line bg-surface/60">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6">
-          <button onClick={() => navigate(`/movies/${st.movieId}`)} className="rounded-xl p-2 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Back">
+          <button onClick={() => navigate(listingPath(st))} className="rounded-xl p-2 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Back">
             <ArrowLeft size={20} />
           </button>
           <div className="hidden h-16 w-11 shrink-0 overflow-hidden rounded-lg sm:block">
@@ -130,7 +130,7 @@ export default function SeatSelection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {!st.bookable ? (
           <div className="mt-10">
-            <EmptyState icon={Info} title="Booking closed" text="This show has already started or is no longer available." action={<Link to={`/movies/${st.movieId}`} className="btn-primary">Pick another time</Link>} />
+            <EmptyState icon={Info} title="Booking closed" text="This show has already started or is no longer available." action={<Link to={listingPath(st)} className="btn-primary">Pick another time</Link>} />
           </div>
         ) : (
           <>

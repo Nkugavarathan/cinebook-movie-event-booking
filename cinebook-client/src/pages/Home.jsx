@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { Armchair, Clock, CreditCard, MapPin, Play, QrCode, Ticket } from "lucide-react"
+import { Armchair, ArrowRight, Clock, CreditCard, MapPin, Play, QrCode, Ticket } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import MovieGrid from "../components/MovieGrid"
+import EventCard from "../components/EventCard"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
 import { runtime } from "../lib/format"
@@ -11,15 +12,17 @@ import { runtime } from "../lib/format"
 export default function Home() {
   const [movies, setMovies] = useState([])
   const [theaters, setTheaters] = useState([])
+  const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [heroIndex, setHeroIndex] = useState(0)
   const [trailer, setTrailer] = useState(null)
 
   useEffect(() => {
-    Promise.all([api.get("/movies"), api.get("/theaters")])
-      .then(([m, t]) => {
+    Promise.all([api.get("/movies"), api.get("/theaters"), api.get("/events")])
+      .then(([m, t, e]) => {
         setMovies(m.data)
         setTheaters(t.data)
+        setEvents(e.data)
       })
       .catch((err) => toast.error(errorMessage(err, "Could not load movies")))
       .finally(() => setLoading(false))
@@ -114,6 +117,25 @@ export default function Home() {
         </div>
         <MovieGrid movies={movies} loading={loading} />
       </section>
+
+      {/* Events */}
+      {events.length > 0 && (
+        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="font-display text-3xl font-bold tracking-tight">Upcoming events</h2>
+              <p className="mt-1 text-muted">Concerts, comedy, theatre and more — with reserved seating.</p>
+            </div>
+            <Link to="/events" className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-brand hover:underline sm:flex">
+              View all <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {events.slice(0, 4).map((e) => <EventCard key={e.id} event={e} />)}
+          </div>
+          <Link to="/events" className="btn-ghost mt-6 w-full sm:hidden">View all events</Link>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">

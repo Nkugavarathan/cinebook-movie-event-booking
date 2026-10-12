@@ -18,26 +18,45 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Long> {
     List<ShowTime> findUpcomingForMovie(@Param("movieId") Long movieId, @Param("fromDate") LocalDate fromDate);
 
     @Query("""
-            select st from ShowTime st
-            where st.showDate >= :fromDate and st.movie.active = true
+            select st from ShowTime st join st.movie m
+            where st.showDate >= :fromDate and m.active = true
             order by st.showDate, st.startTime
             """)
     List<ShowTime> findAllUpcoming(@Param("fromDate") LocalDate fromDate);
 
-    List<ShowTime> findByScreenIdAndShowDate(Long screenId, LocalDate showDate);
+    @Query("""
+            select st from ShowTime st join st.event e
+            where st.showDate >= :fromDate and e.active = true
+            order by st.showDate, st.startTime
+            """)
+    List<ShowTime> findAllUpcomingEvents(@Param("fromDate") LocalDate fromDate);
 
     @Query("""
             select st from ShowTime st
-            where (:movieId is null or st.movie.id = :movieId)
+            where st.event.id = :eventId and st.showDate >= :fromDate
+            order by st.showDate, st.startTime
+            """)
+    List<ShowTime> findUpcomingForEvent(@Param("eventId") Long eventId, @Param("fromDate") LocalDate fromDate);
+
+    List<ShowTime> findByScreenIdAndShowDate(Long screenId, LocalDate showDate);
+
+    @Query("""
+            select st from ShowTime st left join st.movie m left join st.event e
+            where (:movieId is null or m.id = :movieId)
+              and (:eventId is null or e.id = :eventId)
+              and (:kind is null or (:kind = 'MOVIE' and m.id is not null) or (:kind = 'EVENT' and e.id is not null))
               and (:theaterId is null or st.screen.theater.id = :theaterId)
               and (:date is null or st.showDate = :date)
             order by st.showDate, st.startTime
             """)
-    List<ShowTime> search(@Param("movieId") Long movieId,
+    List<ShowTime> search(@Param("kind") String kind,
+                          @Param("movieId") Long movieId,
+                          @Param("eventId") Long eventId,
                           @Param("theaterId") Long theaterId,
                           @Param("date") LocalDate date);
 
     List<ShowTime> findByMovieId(Long movieId);
+    List<ShowTime> findByEventId(Long eventId);
     List<ShowTime> findByScreenId(Long screenId);
     boolean existsByScreenId(Long screenId);
 

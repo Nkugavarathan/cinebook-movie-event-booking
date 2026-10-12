@@ -39,6 +39,7 @@ public class DtoMapper {
     /** @param withAvailability also count free seats (one extra query pair per showtime). */
     public ShowtimeResponseDTO showtime(ShowTime st, boolean withAvailability) {
         Movie m = st.getMovie();
+        Event e = st.getEvent();
         Screen sc = st.getScreen();
         Theater t = sc.getTheater();
         Long total = null;
@@ -49,14 +50,17 @@ public class DtoMapper {
                     EnumSet.of(BookingStatus.PENDING, BookingStatus.CONFIRMED));
             available = Math.max(0, total - taken);
         }
-        boolean bookable = st.getStartsAt().isAfter(LocalDateTime.now()) && m.isActive();
+        boolean bookable = st.getStartsAt().isAfter(LocalDateTime.now()) && st.isListingActive();
         return new ShowtimeResponseDTO(st.getId(), st.getShowDate(), st.getStartTime(), st.getEndTime(),
                 st.getPriceStandard(), st.getPricePremium(), st.getPriceVip(), currency(),
-                m.getId(), m.getTitle(), m.getPosterUrl(), m.getBackdropUrl(), m.getDuration(),
-                m.getCertificate(), m.getLanguage(),
+                m != null ? m.getId() : null, st.getTitle(), st.getPosterUrl(),
+                m != null ? m.getBackdropUrl() : e.getBannerUrl(), st.getDurationMinutes(),
+                m != null ? m.getCertificate() : e.getAgeLimit(),
+                m != null ? m.getLanguage() : e.getLanguage(),
                 sc.getId(), sc.getScreenName(), sc.getFormat(),
                 t.getId(), t.getName(), t.getCity(), t.getAddress(),
-                total, available, bookable);
+                total, available, bookable,
+                st.getKind(), e != null ? e.getId() : null, e != null ? e.getCategory() : null);
     }
 
     public SeatDTO seat(Seat s, String status, java.math.BigDecimal price) {

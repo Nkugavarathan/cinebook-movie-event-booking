@@ -38,11 +38,44 @@ public class ShowTime {
     @Column(precision = 10, scale = 2)
     private BigDecimal priceVip;
 
-    @ManyToOne(optional = false)
+    /** Exactly one of movie / event is set. */
+    @ManyToOne
     private Movie movie;
+
+    @ManyToOne
+    private Event event;
 
     @ManyToOne(optional = false)
     private Screen screen;
+
+    public boolean isEvent() {
+        return event != null;
+    }
+
+    public String getKind() {
+        return isEvent() ? "EVENT" : "MOVIE";
+    }
+
+    public Long getListingId() {
+        return isEvent() ? event.getId() : movie.getId();
+    }
+
+    public String getTitle() {
+        return isEvent() ? event.getName() : movie.getTitle();
+    }
+
+    public String getPosterUrl() {
+        return isEvent() ? event.getPosterUrl() : movie.getPosterUrl();
+    }
+
+    public int getDurationMinutes() {
+        return isEvent() ? event.getDuration() : movie.getDuration();
+    }
+
+    /** Whether the movie/event is still listed for sale. */
+    public boolean isListingActive() {
+        return isEvent() ? event.isActive() : movie.isActive();
+    }
 
     public BigDecimal priceFor(SeatType type) {
         return switch (type) {

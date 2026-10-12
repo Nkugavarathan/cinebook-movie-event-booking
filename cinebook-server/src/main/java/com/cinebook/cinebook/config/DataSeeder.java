@@ -31,6 +31,7 @@ public class DataSeeder implements ApplicationRunner {
     private final ScreenRepository screenRepo;
     private final SeatRepository seatRepo;
     private final ShowTimeRepository showTimeRepo;
+    private final EventRepository eventRepo;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.email}")
@@ -60,6 +61,9 @@ public class DataSeeder implements ApplicationRunner {
 
         if (seedDemo && movieRepo.count() == 0) {
             seedCatalogue();
+        }
+        if (seedDemo && eventRepo.count() == 0) {
+            seedEvents();
         }
     }
 
@@ -118,6 +122,62 @@ public class DataSeeder implements ApplicationRunner {
         }
         showTimeRepo.saveAll(shows);
         log.info("Seeded demo data: {} movies, 2 theaters, 3 screens, {} showtimes", movies.size(), shows.size());
+    }
+
+    private void seedEvents() {
+        String u = "https://images.unsplash.com/";
+        String q = "?w=800&q=80&auto=format&fit=crop";
+        List<Event> events = eventRepo.saveAll(List.of(
+                event("Symphony Under the Stars", "Concert", "Colombo Symphony Orchestra", 120, "All ages",
+                        "An evening of timeless classics - Beethoven, Vivaldi and film scores - performed live by a full orchestra.",
+                        u + "photo-1465847899084-d164df4dedc6" + q),
+                event("Laugh Out Loud: Stand-up Night", "Comedy", "Top local comedians", 90, "16+",
+                        "Five of the island's sharpest stand-up comics, one mic, zero chill. Expect sold-out laughs.",
+                        u + "photo-1585699324551-f6c309eedeca" + q),
+                event("Hamlet", "Theatre", "Lionel Wendt Players", 150, "12+",
+                        "Shakespeare's tragedy of revenge and madness, staged in a bold modern production.",
+                        u + "photo-1503095396549-807759245b35" + q),
+                event("Electro Pulse Live", "Concert", "DJ Nova & friends", 180, "18+",
+                        "A high-energy night of electronic music with a full light show and guest DJs.",
+                        u + "photo-1470225620780-dba8ba36b745" + q),
+                event("The Great Kids Magic Show", "Kids", "Magician Max", 60, "All ages",
+                        "Disappearing rabbits, floating balloons and plenty of audience participation for the little ones.",
+                        u + "photo-1530103862676-de8c9debad1d" + q)
+        ));
+
+        Theater venue = theaterRepo.save(Theater.builder().name("Nelum Pokuna Theatre").city("Colombo")
+                .address("110 Ananda Coomaraswamy Mawatha, Colombo 07").facilities("Parking,Wheelchair Access,Cafe").build());
+        Screen mainHall = screen(venue, "Main Hall", "Live", 12, 20, new int[]{5, 16});
+        Screen studio = screen(venue, "Studio Stage", "Live", 6, 12, new int[]{6});
+
+        BigDecimal[] base = basePrices();
+        BigDecimal mult = new BigDecimal("2.5");
+        List<ShowTime> shows = new ArrayList<>();
+        for (int day = 1; day <= 14; day++) {
+            LocalDate date = LocalDate.now().plusDays(day);
+            Event evening = events.get(day % 4);           // the four evening events rotate in the Main Hall
+            shows.add(eventShow(evening, mainHall, date, LocalTime.of(19, 0), base, mult));
+            if (date.getDayOfWeek().getValue() >= 6) {      // weekend matinee + kids show
+                shows.add(eventShow(events.get(4), studio, date, LocalTime.of(11, 0), base, BigDecimal.ONE));
+                shows.add(eventShow(events.get(1), studio, date, LocalTime.of(16, 0), base, new BigDecimal("1.5")));
+            }
+        }
+        showTimeRepo.saveAll(shows);
+        log.info("Seeded demo events: {} events at {}, {} performances", events.size(), venue.getName(), shows.size());
+    }
+
+    private Event event(String name, String category, String performer, int duration, String age, String description, String poster) {
+        return Event.builder().name(name).category(category).performer(performer).duration(duration).ageLimit(age)
+                .description(description).posterUrl(poster).language("English").location("Colombo").active(true).build();
+    }
+
+    private ShowTime eventShow(Event e, Screen screen, LocalDate date, LocalTime start, BigDecimal[] base, BigDecimal mult) {
+        return ShowTime.builder().event(e).screen(screen).showDate(date).startTime(start)
+                .endTime(start.plusMinutes(e.getDuration()))
+                .priceStandard(base[0].multiply(mult).setScale(2, java.math.RoundingMode.HALF_UP))
+                .pricePremium(base[1].multiply(mult).setScale(2, java.math.RoundingMode.HALF_UP))
+                .priceVip(base[2].multiply(mult).setScale(2, java.math.RoundingMode.HALF_UP))
+                .build();
     }
 
     /** Sensible ticket prices for the configured currency: standard, premium, VIP. */

@@ -77,7 +77,6 @@ public class PaymentService {
         }
 
         ShowTime st = booking.getShowTime();
-        Movie movie = st.getMovie();
         String currency = booking.getCurrency();
         String description = st.getScreen().getTheater().getName() + " - " + st.getScreen().getScreenName()
                 + " | " + st.getStartsAt().format(SHOW_FMT) + " | Seats " + booking.getSeatLabels();
@@ -108,10 +107,10 @@ public class PaymentService {
         byType.forEach((type, qtyAndUnit) -> {
             SessionCreateParams.LineItem.PriceData.ProductData.Builder product =
                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                            .setName(movie.getTitle() + " - " + pretty(type) + " seat")
+                            .setName(st.getTitle() + " - " + pretty(type) + " seat")
                             .setDescription(description);
-            if (movie.getPosterUrl() != null && movie.getPosterUrl().startsWith("https://")) {
-                product.addImage(movie.getPosterUrl());
+            if (st.getPosterUrl() != null && st.getPosterUrl().startsWith("https://")) {
+                product.addImage(st.getPosterUrl());
             }
             params.addLineItem(SessionCreateParams.LineItem.builder()
                     .setQuantity(qtyAndUnit[0])

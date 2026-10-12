@@ -71,3 +71,8 @@ export function dateTimeShort(value) {
   const d = parseDateTime(value)
   return d ? d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : ""
 }
+
+/** Page of the movie or event a showtime belongs to. */
+export function listingPath(showtime) {
+  return showtime.kind === "EVENT" ? `/events/${showtime.eventId}` : `/movies/${showtime.movieId}`
+}

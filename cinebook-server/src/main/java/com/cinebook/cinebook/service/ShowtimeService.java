@@ -3,10 +3,12 @@ package com.cinebook.cinebook.service;
 import com.cinebook.cinebook.dto.ShowtimeRequest;
 import com.cinebook.cinebook.dto.ShowtimeResponseDTO;
 import com.cinebook.cinebook.exception.ApiException;
+import com.cinebook.cinebook.model.Event;
 import com.cinebook.cinebook.model.Movie;
 import com.cinebook.cinebook.model.Screen;
 import com.cinebook.cinebook.model.ShowTime;
 import com.cinebook.cinebook.repository.BookingRepository;
+import com.cinebook.cinebook.repository.EventRepository;
 import com.cinebook.cinebook.repository.MovieRepository;
 import com.cinebook.cinebook.repository.ScreenRepository;
 import com.cinebook.cinebook.repository.ShowTimeRepository;
@@ -33,6 +35,7 @@ public class ShowtimeService {
 
     private final ShowTimeRepository showTimeRepository;
     private final MovieRepository movieRepository;
+    private final EventRepository eventRepository;
     private final ScreenRepository screenRepository;
     private final BookingRepository bookingRepository;
     private final DtoMapper mapper;
@@ -40,8 +43,14 @@ public class ShowtimeService {
     /** Creates one showtime per start time; all are validated before anything is saved. */
     @Transactional
     public List<ShowtimeResponseDTO> create(ShowtimeRequest req) {
-        Movie movie = movieRepository.findById(req.movieId())
+        if ((req.movieId() == null) == (req.eventId() == null)) {
+            throw ApiException.badRequest("Choose either a movie or an event");
+        }
+        Movie movie = req.movieId() == null ? null : movieRepository.findById(req.movieId())
                 .orElseThrow(() -> ApiException.notFound("Movie not found"));
+        Event event = req.eventId() == null ? null : eventRepository.findById(req.eventId())
+                .orElseThrow(() -> ApiException.notFound("Event not found"));
+        int duration = movie != null ? movie.getDuration() : event.getDuration();
         Screen screen = screenRepository.findById(req.screenId())
                 .orElseThrow(() -> ApiException.notFound("Screen not found"));
 
@@ -59,7 +68,7 @@ public class ShowtimeService {
             if (!LocalDateTime.of(req.showDate(), start).isAfter(now)) {
                 throw ApiException.badRequest("Showtime " + start.format(HH_MM) + " on " + req.showDate() + " is in the past");
             }
-            LocalTime end = start.plusMinutes(movie.getDuration()); // may wrap past midnight
+            LocalTime end = start.plusMinutes(duration); // may wrap past midnight
             ShowTime candidate = ShowTime.builder()
                     .showDate(req.showDate())
                     .startTime(start)
@@ -68,6 +77,7 @@ public class ShowtimeService {
                     .pricePremium(premium)
                     .priceVip(vip)
                     .movie(movie)
+                    .event(event)
                     .screen(screen)
                     .build();
 
@@ -75,7 +85,7 @@ public class ShowtimeService {
                 if (overlaps(candidate, other)) {
                     throw ApiException.conflict(String.format(
                             "%s at %s clashes with \"%s\" (%s-%s) on %s. Allow %d minutes between shows.",
-                            screen.getScreenName(), start.format(HH_MM), other.getMovie().getTitle(),
+                            screen.getScreenName(), start.format(HH_MM), other.getTitle(),
                             other.getStartTime().format(HH_MM), other.getEndTime().format(HH_MM),
                             req.showDate(), TURNAROUND_MINUTES));
                 }
@@ -88,8 +98,9 @@ public class ShowtimeService {
     }
 
     @Transactional(readOnly = true)
-    public List<ShowtimeResponseDTO> search(Long movieId, Long theaterId, LocalDate date) {
-        return showTimeRepository.search(movieId, theaterId, date).stream()
+    public List<ShowtimeResponseDTO> search(String kind, Long movieId, Long eventId, Long theaterId, LocalDate date) {
+        String k = kind == null || kind.isBlank() ? null : kind.toUpperCase();
+        return showTimeRepository.search(k, movieId, eventId, theaterId, date).stream()
                 .map(st -> mapper.showtime(st, true))
                 .toList();
     }

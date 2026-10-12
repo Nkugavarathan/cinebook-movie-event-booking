@@ -26,10 +26,12 @@ public class AdminShowTimeController {
 
     @GetMapping
     public List<ShowtimeResponseDTO> getShowTimes(
+            @RequestParam(required = false) String kind,
             @RequestParam(required = false) Long movieId,
+            @RequestParam(required = false) Long eventId,
             @RequestParam(required = false) Long theaterId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return showtimeService.search(movieId, theaterId, date);
+        return showtimeService.search(kind, movieId, eventId, theaterId, date);
     }
 
     /** Creates one showtime per start time in the request. */

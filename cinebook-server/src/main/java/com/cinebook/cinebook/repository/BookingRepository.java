@@ -34,12 +34,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("""
             select b from Booking b
+            join b.user u join b.showTime st left join st.movie m left join st.event e
             where (:status is null or b.status = :status)
               and (:q is null
                    or lower(b.reference) like lower(concat('%', :q, '%'))
-                   or lower(b.user.email) like lower(concat('%', :q, '%'))
-                   or lower(b.user.name) like lower(concat('%', :q, '%'))
-                   or lower(b.showTime.movie.title) like lower(concat('%', :q, '%')))
+                   or lower(u.email) like lower(concat('%', :q, '%'))
+                   or lower(u.name) like lower(concat('%', :q, '%'))
+                   or lower(m.title) like lower(concat('%', :q, '%'))
+                   or lower(e.name) like lower(concat('%', :q, '%')))
             order by b.createdAt desc
             """)
     List<Booking> search(@Param("status") BookingStatus status, @Param("q") String q, Pageable pageable);

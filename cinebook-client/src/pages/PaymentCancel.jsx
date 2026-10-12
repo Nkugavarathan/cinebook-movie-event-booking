@@ -4,6 +4,7 @@ import { CircleSlash } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import { Spinner } from "../components/ui"
+import { listingPath } from "../lib/format"
 
 export default function PaymentCancel() {
   const [params] = useSearchParams()
@@ -16,7 +17,7 @@ export default function PaymentCancel() {
     try {
       const res = await api.post(`/bookings/${bookingId}/cancel`)
       toast.success("Your seats were released")
-      navigate(`/movies/${res.data.showtime.movieId}`, { replace: true })
+      navigate(listingPath(res.data.showtime), { replace: true })
     } catch (err) {
       toast.error(errorMessage(err))
       navigate("/bookings")

@@ -1,55 +1,48 @@
-import React from "react"
-// import { Link } from "react-router-dom"
-import { Calendar } from "lucide-react"
+import { Link } from "react-router-dom"
+import { CalendarDays, MapPin } from "lucide-react"
+import Poster from "./Poster"
+import { dayChip, money } from "../lib/format"
 
-function EventCard({ event }) {
-  const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
+export default function EventCard({ event }) {
+  const next = event.nextDate ? dayChip(event.nextDate) : null
 
   return (
-    <div
-      className="  bg-white rounded-xl shadow-lg overflow-hidden 
-                    transform transition-all duration-300 ease-in-out 
-                    hover:scale-[1.03] hover:shadow-2xl flex flex-col h-full"
-    >
-      <div className="relative overflow-hidden">
-        <img
-          src={event.poster}
-          alt={event.title}
-          className="w-full h-56 object-cover transition duration-500 hover:opacity-90"
-        />
-
-        <div className="absolute top-3 right-3 bg-[#C2E2FA] text-gray-800 text-sm font-semibold px-3 py-1 rounded-full shadow-md">
-          {formattedDate}
+    <Link to={`/events/${event.id}`} className="card group flex flex-col overflow-hidden transition hover:-translate-y-1 hover:border-faint hover:shadow-2xl hover:shadow-black/20">
+      <div className="relative aspect-4/3 overflow-hidden">
+        <Poster src={event.posterUrl} title={event.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
+        {event.category && (
+          <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white backdrop-blur">
+            {event.category}
+          </span>
+        )}
+        {next && (
+          <span className="absolute right-3 top-3 flex flex-col items-center rounded-xl bg-white px-2.5 py-1.5 text-center text-zinc-900 shadow-lg">
+            <span className="text-[10px] font-bold uppercase text-brand">{next.month}</span>
+            <span className="font-display text-xl font-bold leading-none">{next.day}</span>
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-2 font-display text-lg font-semibold leading-snug group-hover:text-brand">{event.name}</h3>
+        {event.performer && <p className="mt-1 truncate text-sm text-muted">{event.performer}</p>}
+        <div className="mt-3 space-y-1 text-xs text-muted">
+          {event.venues && <p className="flex items-center gap-1.5 truncate"><MapPin size={13} />{event.venues}</p>}
+          <p className="flex items-center gap-1.5">
+            <CalendarDays size={13} />
+            {event.upcomingShows > 0 ? `${event.upcomingShows} date${event.upcomingShows > 1 ? "s" : ""} available` : "Dates coming soon"}
+          </p>
+        </div>
+        <div className="mt-auto flex items-center justify-between pt-4">
+          <span className="text-sm">
+            {event.fromPrice != null ? (
+              <><span className="text-muted">From </span><span className="font-semibold">{money(event.fromPrice, event.currency)}</span></>
+            ) : <span className="text-faint">—</span>}
+          </span>
+          <span className="rounded-lg bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand transition group-hover:bg-brand group-hover:text-white">
+            Book now
+          </span>
         </div>
       </div>
-
-      <div className="p-5 flex flex-col flex-grow">
-        <div className="mb-4 flex-grow">
-          <h3 className="text-xl font-extrabold text-gray-800 mb-2 leading-snug">
-            {event.title}
-          </h3>
-          <div className="flex items-center text-gray-500 text-sm">
-            <Calendar size={16} className="text-[#CD2C58] mr-2" />
-            <span className="font-medium">{formattedDate}</span>
-          </div>
-        </div>
-
-        <button
-          className="cursor-pointer w-full text-center inline-block 
-                     bg-[#FF5656] hover:bg-[#CD2C58] text-white 
-                     px-4 py-3 rounded-lg font-bold uppercase tracking-wider 
-                     transition duration-300 transform hover:scale-[1.01] 
-                     shadow-md"
-        >
-          View Details
-        </button>
-      </div>
-    </div>
+    </Link>
   )
 }
-
-export default EventCard

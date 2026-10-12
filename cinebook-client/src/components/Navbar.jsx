@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { Clapperboard, LogOut, Menu, Ticket, User, X } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
+import ThemeToggle from "./ThemeToggle"
 
 const linkClass = ({ isActive }) =>
   `rounded-lg px-3 py-2 text-sm font-medium transition ${isActive ? "text-ink bg-surface-2" : "text-muted hover:text-ink"}`
@@ -41,10 +42,12 @@ export default function Navbar() {
         <div className="hidden items-center gap-1 md:flex">
           <NavLink to="/" end className={linkClass}>Home</NavLink>
           <NavLink to="/movies" className={linkClass}>Movies</NavLink>
+          <NavLink to="/events" className={linkClass}>Events</NavLink>
           {isAuthed && <NavLink to="/bookings" className={linkClass}>My Tickets</NavLink>}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <ThemeToggle />
           {isAuthed ? (
             <div className="relative" ref={menuRef}>
               <button
@@ -79,9 +82,12 @@ export default function Navbar() {
           )}
         </div>
 
-        <button className="rounded-lg p-2 text-muted hover:text-ink md:hidden" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button className="rounded-lg p-2 text-muted hover:text-ink" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -89,6 +95,7 @@ export default function Navbar() {
           <div className="flex flex-col gap-1">
             <NavLink to="/" end className={linkClass} onClick={() => setOpen(false)}>Home</NavLink>
             <NavLink to="/movies" className={linkClass} onClick={() => setOpen(false)}>Movies</NavLink>
+            <NavLink to="/events" className={linkClass} onClick={() => setOpen(false)}>Events</NavLink>
             {isAuthed ? (
               <>
                 <NavLink to="/bookings" className={linkClass} onClick={() => setOpen(false)}>My Tickets</NavLink>

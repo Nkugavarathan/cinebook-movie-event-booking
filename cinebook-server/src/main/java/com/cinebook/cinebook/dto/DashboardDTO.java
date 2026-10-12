@@ -10,6 +10,7 @@ public record DashboardDTO(
         long pendingBookings,
         long ticketsSold,
         long activeMovies,
+        long activeEvents,
         long theaters,
         long screens,
         long upcomingShowtimes,
@@ -22,6 +23,6 @@ public record DashboardDTO(
     public record DailyRevenue(LocalDate date, BigDecimal revenue, long tickets) {
     }
 
-    public record TopMovie(Long movieId, String title, String posterUrl, BigDecimal revenue, long tickets) {
+    public record TopMovie(Long id, String kind, String title, String posterUrl, BigDecimal revenue, long tickets) {
     }
 }

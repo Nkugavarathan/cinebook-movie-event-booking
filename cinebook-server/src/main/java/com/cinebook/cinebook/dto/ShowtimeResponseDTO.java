@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+/**
+ * A performance of a movie or an event. For events the movie* fields carry the event's
+ * title/poster/duration so the seat, checkout and ticket screens work unchanged;
+ * use {@code kind} with {@code movieId} / {@code eventId} to link back to the listing.
+ */
 public record ShowtimeResponseDTO(
         Long id,
         LocalDate showDate,
@@ -29,5 +34,8 @@ public record ShowtimeResponseDTO(
         String address,
         Long totalSeats,
         Long availableSeats,
-        boolean bookable) {
+        boolean bookable,
+        String kind,
+        Long eventId,
+        String category) {
 }

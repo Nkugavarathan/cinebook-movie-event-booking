@@ -10,7 +10,9 @@ import java.time.LocalTime;
 import java.util.List;
 
 public record ShowtimeRequest(
-        @NotNull(message = "Movie is required") Long movieId,
+        /** Set exactly one of movieId / eventId. */
+        Long movieId,
+        Long eventId,
         @NotNull(message = "Screen is required") Long screenId,
         @NotNull(message = "Date is required") LocalDate showDate,
         @NotEmpty(message = "Add at least one start time") List<LocalTime> startTimes,

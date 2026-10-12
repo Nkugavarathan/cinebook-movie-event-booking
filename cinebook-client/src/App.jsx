@@ -6,6 +6,8 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import Home from "./pages/Home"
 import Movies from "./pages/Movies"
 import MovieDetail from "./pages/MovieDetail"
+import Events from "./pages/Events"
+import EventDetail from "./pages/EventDetail"
 import SeatSelection from "./pages/SeatSelection"
 import Checkout from "./pages/Checkout"
 import PaymentSuccess from "./pages/PaymentSuccess"
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/movies" element={<Movies />} />
           <Route path="/movies/:id" element={<MovieDetail />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/book/:showtimeId" element={<SeatSelection />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

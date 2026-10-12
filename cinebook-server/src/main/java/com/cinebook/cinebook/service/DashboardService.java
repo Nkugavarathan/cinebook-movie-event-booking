@@ -3,7 +3,6 @@ package com.cinebook.cinebook.service;
 import com.cinebook.cinebook.dto.DashboardDTO;
 import com.cinebook.cinebook.model.Booking;
 import com.cinebook.cinebook.model.BookingStatus;
-import com.cinebook.cinebook.model.Movie;
 import com.cinebook.cinebook.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +20,7 @@ public class DashboardService {
 
     private final BookingRepository bookingRepo;
     private final MovieRepository movieRepo;
+    private final EventRepository eventRepo;
     private final TheaterRepository theaterRepo;
     private final ScreenRepository screenRepo;
     private final ShowTimeRepository showTimeRepo;
@@ -43,11 +43,15 @@ public class DashboardService {
             last7.add(new DashboardDTO.DailyRevenue(d, sum(day), day.stream().mapToLong(b -> b.getSeats().size()).sum()));
         }
 
-        Map<Movie, List<Booking>> byMovie = confirmed.stream()
-                .collect(Collectors.groupingBy(b -> b.getShowTime().getMovie()));
-        List<DashboardDTO.TopMovie> top = byMovie.entrySet().stream()
-                .map(e -> new DashboardDTO.TopMovie(e.getKey().getId(), e.getKey().getTitle(), e.getKey().getPosterUrl(),
-                        sum(e.getValue()), e.getValue().stream().mapToLong(b -> b.getSeats().size()).sum()))
+        // Top sellers across movies and events, keyed like "MOVIE:3" / "EVENT:1".
+        Map<String, List<Booking>> byListing = confirmed.stream()
+                .collect(Collectors.groupingBy(b -> b.getShowTime().getKind() + ":" + b.getShowTime().getListingId()));
+        List<DashboardDTO.TopMovie> top = byListing.values().stream()
+                .map(list -> {
+                    var st = list.get(0).getShowTime();
+                    return new DashboardDTO.TopMovie(st.getListingId(), st.getKind(), st.getTitle(), st.getPosterUrl(),
+                            sum(list), list.stream().mapToLong(b -> b.getSeats().size()).sum());
+                })
                 .sorted(Comparator.comparing(DashboardDTO.TopMovie::revenue).reversed())
                 .limit(5)
                 .toList();
@@ -58,6 +62,7 @@ public class DashboardService {
                 bookingRepo.countByStatus(BookingStatus.PENDING),
                 tickets,
                 movieRepo.countByActiveTrue(),
+                eventRepo.countByActiveTrue(),
                 theaterRepo.count(),
                 screenRepo.count(),
                 showTimeRepo.countByShowDateGreaterThanEqual(today),
