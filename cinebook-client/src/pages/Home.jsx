@@ -9,6 +9,7 @@ import { EventCardSkeleton } from "../components/Skeletons"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
 import HowItWorks from "../components/HowItWorks"
+import CinemasSection from "../components/CinemasSection"
 import { runtime } from "../lib/format"
 
 export default function Home() {
@@ -143,32 +144,7 @@ export default function Home() {
 
       <HowItWorks />
 
-      {/* Theaters */}
-      {theaters.length > 0 && (
-        <section className="mx-auto mt-24 max-w-7xl px-4 sm:px-6">
-          <h2 className="font-display text-3xl font-bold tracking-tight">Our cinemas</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {theaters.map((t) => (
-              <div key={t.id} className="card p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">{t.name}</h3>
-                    <p className="mt-1 flex items-center gap-1.5 text-sm text-muted"><MapPin size={14} />{t.address || t.city}</p>
-                  </div>
-                  <span className="shrink-0 rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted">{t.city}</span>
-                </div>
-                {t.facilities && (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {t.facilities.split(",").map((f) => f.trim()).filter(Boolean).map((f) => (
-                      <span key={f} className="rounded-md border border-line px-2 py-0.5 text-xs text-muted">{f}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <CinemasSection theaters={theaters} />
 
       {trailer && <TrailerModal url={trailer} onClose={() => setTrailer(null)} />}
     </div>
