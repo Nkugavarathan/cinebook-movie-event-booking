@@ -22,6 +22,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - Secure payment on Stripe's hosted checkout (cards, Apple Pay, Google Pay)
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
 - **Ticket PDF by email** automatically after payment (also downloadable / re-sendable from the ticket page)
+- **Ratings & reviews**: after attending, rate a movie or event 1-5 stars with a comment; averages show on cards and detail pages
 - **Promo codes** at checkout (e.g. `FIRSTSHOW20`, `WEEKEND500`): discount shown on the order summary and on Stripe's page
 - **Refund confirmation email** whenever a booking is refunded
 - **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
@@ -35,6 +36,9 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - **Seat layout designer**: set rows × seats, paint seat types per seat/row/column, mark gaps and aisles
 - Showtimes: schedule several start times at once, with per-tier prices and automatic clash detection (movie runtime + 15 min turnaround), plus a seat occupancy view
 - Bookings: search and filter, view details, cancel a hold, or **cancel and refund through Stripe**
+- **QR check-in** (staff + admins): scan tickets with the phone camera, a USB scanner or by code; rejects reused, refunded, cancelled, unpaid, wrong-show, too-early and ended tickets; live "checked in 142 / 180" per show; undo
+- **Door staff role**: STAFF accounts sign in to the admin app and only see the check-in scanner
+- **Reviews moderation**: hide / show / delete reviews (hidden ones don't count in averages)
 - **Promo codes**: percent (with optional cap) or fixed-amount codes, minimum order, start/expiry dates, total and per-customer limits, on/off switch; usage and discount-given stats
 - **Users**: search customers and admins, see each person's bookings and spend, make or remove admins, block / unblock (blocked users can't sign in), delete accounts without bookings. Admins never see or set passwords - customers sign up themselves. Admins can't block, demote or delete themselves, and the last admin can never be removed
 
@@ -87,6 +91,9 @@ A `ShowTime` points to either a `Movie` or an `Event` and to a `Screen` (a cinem
 When a booking is confirmed, `PaymentService` publishes a `BookingConfirmedEvent`. `TicketMailService` handles it **after the transaction commits** and on a background thread: it renders the PDF (OpenPDF + ZXing QR code) and sends it through Gmail SMTP to the contact email entered at checkout. Likewise, whenever a paid booking is refunded (customer self-cancel, admin cancel, or an automatic refund of a late payment) a `BookingRefundedEvent` triggers a **refund confirmation email** with the refunded amount, the cancelled show and seats. A slow or failing mail server never affects the payment; the ticket can always be downloaded or re-sent from the ticket page. If `MAIL_USERNAME`/`MAIL_PASSWORD` are empty, emails are skipped with a log warning.
 
 For Gmail, turn on 2-Step Verification and create an **App Password** (Google Account -> Security -> App passwords). Gmail allows roughly 500 emails a day from a personal account.
+
+### Check-in
+A ticket QR contains `CINEBOOK:<reference>`. Scanning locks the booking row, so two staff scanning the same ticket at the same moment can't both admit it (tested: 5 parallel scans -> 1 admitted, 4 "already checked in"). Doors open 3 hours before the show and close 1 hour after it ends. Checked-in tickets can no longer be self-refunded, and count as "attended" for reviews.
 
 ### Promo codes
 - The discount is always computed on the server; the client only sends the code. Rules checked: active, start/expiry, minimum order, total uses, uses per customer, and a minimum payable amount (`MIN_PAYABLE`, default LKR 200, because Stripe has a minimum charge).
@@ -141,6 +148,8 @@ On first start the server:
 - creates the admin account **admin@cinebook.com / Admin@123** (change it with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
 - seeds demo data (6 movies, 2 theaters, 3 screens, about 60 showtimes over the next 6 days) if there are no movies. Disable with `SEED_DEMO_DATA=false`.
 
+> Upgrading an existing database from before door staff were added: run `ALTER TABLE users MODIFY role ENUM('USER','STAFF','ADMIN');` once.
+
 > Upgrading an existing database from before events were added: run `ALTER TABLE show_time MODIFY movie_id BIGINT NULL;` once (Hibernate's auto-update adds new columns but doesn't relax NOT NULL).
 
 > `src/main/resources/application.properties` is listed in `.gitignore`. It no longer contains secrets (they come from `.env`), so you can commit it if you want others to be able to run the project.
@@ -158,7 +167,14 @@ cd cinebook-admin
 npm install
 npm run dev        # http://localhost:5174
 ```
-Both apps read `VITE_API_URL` (default `http://localhost:8080/api`).
+The client reads `VITE_API_URL` (default `http://localhost:8080/api`). The admin calls `/api`, which its Vite dev server proxies to Spring Boot.
+
+**Scanning tickets with a phone:** browsers only allow the camera on HTTPS (or localhost). Run the admin with
+```bash
+cd cinebook-admin
+npm run dev:phone   # https://<your-PC-IP>:5174 on the same Wi-Fi (accept the self-signed certificate once)
+```
+Sign in as a STAFF or ADMIN account and open **Check-in**. Give someone staff access in Admin -> Users -> role "Door staff".
 
 ### 4. Stripe webhooks (optional locally)
 Bookings are confirmed through the success-page redirect even without webhooks. To test webhooks too:
@@ -200,6 +216,9 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/bookings/my` | My bookings |
 | GET | `/api/bookings/{id}` | One of my bookings |
 | POST | `/api/bookings/{id}/cancel` | Release an unpaid hold |
+| GET | `/api/movies/{id}/reviews`, `/api/events/{id}/reviews` | Average, star distribution, reviews, and whether you can review |
+| POST | `/api/reviews` | Create/update your review `{movieId or eventId, rating 1-5, comment}` (only after attending) |
+| DELETE | `/api/reviews/{id}` | Delete your review |
 | POST / DELETE | `/api/bookings/{id}/promo` | Apply `{code}` to / remove the promo from a held booking (server computes the discount) |
 | GET | `/api/bookings/{id}/ticket.pdf` | Download the PDF e-ticket (confirmed bookings) |
 | POST | `/api/bookings/{id}/email-ticket` | Email the PDF ticket again (max once a minute) |
@@ -225,6 +244,11 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/admin/bookings?status=&q=` | Search bookings |
 | GET | `/api/admin/bookings/{id}` | Booking details |
 | POST | `/api/admin/bookings/{id}/cancel` | Cancel a hold, or cancel and refund via Stripe |
+| GET | `/api/admin/checkin/shows?date=` | (ADMIN or STAFF) Shows with sold / checked-in seats |
+| GET | `/api/admin/checkin/shows/{id}` | Door numbers + recent check-ins |
+| POST | `/api/admin/checkin/scan` | `{code, showtimeId?}` -> `{ok, result, title, message}`; result is CHECKED_IN or why not |
+| POST | `/api/admin/checkin/undo/{bookingId}` | Undo an accidental check-in |
+| GET / PATCH / DELETE | `/api/admin/reviews[/{id}]` | Moderate reviews (`{hidden}`) |
 | GET/POST | `/api/admin/promos` | List promo codes with usage stats / create one |
 | PUT/DELETE | `/api/admin/promos/{id}` | Update (incl. on/off) / delete an unused code |
 | GET | `/api/admin/users?q=&role=&blocked=` | Users with confirmed-booking count, total spent, last booking |

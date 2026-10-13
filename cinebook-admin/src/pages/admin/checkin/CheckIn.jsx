@@ -263,7 +263,7 @@ export default function CheckIn() {
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="CB-XXXXXXX (or use a USB scanner)"
+              placeholder="CB-XXXXXXX"
               aria-label="Booking code"
               autoComplete="off"
               spellCheck={false}
