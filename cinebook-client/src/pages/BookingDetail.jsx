@@ -125,6 +125,11 @@ export default function BookingDetail() {
             <span className="text-muted">{b.status === "REFUNDED" ? "Paid (refunded)" : "Paid"}</span>
             <span className="font-display text-lg font-bold">{money(b.totalAmount, b.currency)}</span>
           </div>
+          {b.promoCode && b.discountAmount != null && (
+            <p className="mt-1 w-full text-right text-xs text-emerald-400">
+              Promo {b.promoCode} saved you {money(b.discountAmount, b.currency)}
+            </p>
+          )}
           {b.confirmedAt && <p className="mt-1 w-full text-right text-xs text-faint">Booked {dateTimeShort(b.confirmedAt)}</p>}
           {confirmed && b.ticketEmailedAt && (
             <p className="no-print mt-1 w-full text-right text-xs text-faint">

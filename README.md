@@ -22,6 +22,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - Secure payment on Stripe's hosted checkout (cards, Apple Pay, Google Pay)
 - My Tickets (upcoming / past / cancelled) and a printable ticket with QR code
 - **Ticket PDF by email** automatically after payment (also downloadable / re-sendable from the ticket page)
+- **Promo codes** at checkout (e.g. `FIRSTSHOW20`, `WEEKEND500`): discount shown on the order summary and on Stripe's page
 - **Refund confirmation email** whenever a booking is refunded
 - **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
 
@@ -34,6 +35,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - **Seat layout designer**: set rows × seats, paint seat types per seat/row/column, mark gaps and aisles
 - Showtimes: schedule several start times at once, with per-tier prices and automatic clash detection (movie runtime + 15 min turnaround), plus a seat occupancy view
 - Bookings: search and filter, view details, cancel a hold, or **cancel and refund through Stripe**
+- **Promo codes**: percent (with optional cap) or fixed-amount codes, minimum order, start/expiry dates, total and per-customer limits, on/off switch; usage and discount-given stats
 - **Users**: search customers and admins, see each person's bookings and spend, make or remove admins, block / unblock (blocked users can't sign in), delete accounts without bookings. Admins never see or set passwords - customers sign up themselves. Admins can't block, demote or delete themselves, and the last admin can never be removed
 
 ---
@@ -85,6 +87,12 @@ A `ShowTime` points to either a `Movie` or an `Event` and to a `Screen` (a cinem
 When a booking is confirmed, `PaymentService` publishes a `BookingConfirmedEvent`. `TicketMailService` handles it **after the transaction commits** and on a background thread: it renders the PDF (OpenPDF + ZXing QR code) and sends it through Gmail SMTP to the contact email entered at checkout. Likewise, whenever a paid booking is refunded (customer self-cancel, admin cancel, or an automatic refund of a late payment) a `BookingRefundedEvent` triggers a **refund confirmation email** with the refunded amount, the cancelled show and seats. A slow or failing mail server never affects the payment; the ticket can always be downloaded or re-sent from the ticket page. If `MAIL_USERNAME`/`MAIL_PASSWORD` are empty, emails are skipped with a log warning.
 
 For Gmail, turn on 2-Step Verification and create an **App Password** (Google Account -> Security -> App passwords). Gmail allows roughly 500 emails a day from a personal account.
+
+### Promo codes
+- The discount is always computed on the server; the client only sends the code. Rules checked: active, start/expiry, minimum order, total uses, uses per customer, and a minimum payable amount (`MIN_PAYABLE`, default LKR 200, because Stripe has a minimum charge).
+- A use counts while a booking is paid or is still being paid, so abandoned checkouts and refunds give the use back.
+- Before the Stripe session is created the code is re-checked; if it expired meanwhile it's removed and the customer sees the new total.
+- The discount is sent to Stripe as a one-time coupon, so Checkout shows "Promo CODE -LKR x" and charges the discounted total; the server verifies that amount when confirming. Refunds return what was actually paid.
 
 ### How double booking is prevented
 - Each held or booked seat is a `booking_seat` row with `locked = TRUE`. The unique key `(show_time_id, seat_id, locked)` means only one live booking can own a seat. Released rows get `locked = NULL`, and NULLs never collide, so history is kept.
@@ -192,6 +200,7 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/bookings/my` | My bookings |
 | GET | `/api/bookings/{id}` | One of my bookings |
 | POST | `/api/bookings/{id}/cancel` | Release an unpaid hold |
+| POST / DELETE | `/api/bookings/{id}/promo` | Apply `{code}` to / remove the promo from a held booking (server computes the discount) |
 | GET | `/api/bookings/{id}/ticket.pdf` | Download the PDF e-ticket (confirmed bookings) |
 | POST | `/api/bookings/{id}/email-ticket` | Email the PDF ticket again (max once a minute) |
 | POST | `/api/bookings/{id}/refund` | Cancel a paid ticket and refund it through Stripe (until `REFUND_CUTOFF_HOURS` before the show) |
@@ -216,6 +225,8 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/admin/bookings?status=&q=` | Search bookings |
 | GET | `/api/admin/bookings/{id}` | Booking details |
 | POST | `/api/admin/bookings/{id}/cancel` | Cancel a hold, or cancel and refund via Stripe |
+| GET/POST | `/api/admin/promos` | List promo codes with usage stats / create one |
+| PUT/DELETE | `/api/admin/promos/{id}` | Update (incl. on/off) / delete an unused code |
 | GET | `/api/admin/users?q=&role=&blocked=` | Users with confirmed-booking count, total spent, last booking |
 | GET | `/api/admin/users/summary` | Totals: users, admins, blocked, new this week |
 | GET | `/api/admin/users/{id}` | User + their recent bookings |

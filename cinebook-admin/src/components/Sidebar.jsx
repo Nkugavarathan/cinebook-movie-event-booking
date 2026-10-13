@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom"
-import { Building2, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
+import { BadgePercent, Building2, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
 
 const NAV = [
   ["/admin/dashboard", "Dashboard", LayoutDashboard],
@@ -9,6 +9,7 @@ const NAV = [
   ["/admin/screens", "Screens & Seats", MonitorPlay],
   ["/admin/showtimes", "Showtimes", CalendarClock],
   ["/admin/bookings", "Bookings", Ticket],
+  ["/admin/promos", "Promo codes", BadgePercent],
   ["/admin/users", "Users", Users],
 ]
 

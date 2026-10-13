@@ -42,6 +42,18 @@ export default function BookingSummary({ booking }) {
             <span className="font-medium tabular-nums">{money(g.price * g.count, booking.currency)}</span>
           </div>
         ))}
+        {booking.promoCode && booking.discountAmount != null && (
+          <>
+            <div className="flex items-center justify-between border-t border-line pt-3 text-muted">
+              <span>Subtotal</span>
+              <span className="tabular-nums">{money(booking.subtotalAmount, booking.currency)}</span>
+            </div>
+            <div className="flex items-center justify-between text-emerald-400">
+              <span>Promo <span className="font-mono font-semibold">{booking.promoCode}</span></span>
+              <span className="font-semibold tabular-nums">-{money(booking.discountAmount, booking.currency)}</span>
+            </div>
+          </>
+        )}
         <div className="flex items-center justify-between border-t border-line pt-4">
           <span className="font-semibold">Total</span>
           <span className="font-display text-2xl font-bold">{money(booking.totalAmount, booking.currency)}</span>

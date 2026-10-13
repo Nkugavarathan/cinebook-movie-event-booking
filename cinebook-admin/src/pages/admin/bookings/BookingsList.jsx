@@ -137,6 +137,9 @@ export default function BookingsList() {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <Row label="Status" value={<StatusBadge status={detail.status} />} />
             <Row label="Amount" value={money(detail.totalAmount, detail.currency)} />
+            {detail.promoCode && (
+              <Row label="Promo" value={`${detail.promoCode} (-${money(detail.discountAmount, detail.currency)} from ${money(detail.subtotalAmount, detail.currency)})`} wide />
+            )}
             <Row label="Account" value={`${detail.userName} (${detail.userEmail})`} wide />
             {detail.contactName && <Row label="Ticket holder" value={detail.contactName} />}
             {detail.contactPhone && <Row label="Mobile" value={<a className="text-brand hover:underline" href={`tel:${detail.contactPhone}`}>{detail.contactPhone}</a>} />}

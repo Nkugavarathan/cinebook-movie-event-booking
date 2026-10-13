@@ -16,6 +16,7 @@ import AdminShowTimesList from "./pages/admin/showtimes/AdminShowTImesList"
 import AddShowTime from "./pages/admin/showtimes/AddShowTime"
 import BookingsList from "./pages/admin/bookings/BookingsList"
 import UsersList from "./pages/admin/users/UsersList"
+import PromosList from "./pages/admin/promos/PromosList"
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/admin/showtimes/add" element={<AddShowTime />} />
             <Route path="/admin/bookings" element={<BookingsList />} />
             <Route path="/admin/users" element={<UsersList />} />
+            <Route path="/admin/promos" element={<PromosList />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />

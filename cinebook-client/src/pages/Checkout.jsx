@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import BookingSummary from "../components/BookingSummary"
+import PromoBox from "../components/PromoBox"
 import Countdown from "../components/Countdown"
 import { CheckoutSkeleton } from "../components/Skeletons"
 import { EmptyState, Spinner } from "../components/ui"
@@ -83,6 +84,10 @@ export default function Checkout() {
       window.location.assign(res.data.url) // Stripe-hosted checkout page
     } catch (err) {
       toast.error(errorMessage(err, "Could not start payment"))
+      // e.g. the promo code expired meanwhile: the server removed it, show the new total.
+      if (err.response?.status === 409) {
+        api.get(`/bookings/${bookingId}`).then((r) => setBooking(r.data)).catch(() => {})
+      }
       setPaying(false)
     }
   }
@@ -131,6 +136,7 @@ export default function Checkout() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="card p-6">
             <BookingSummary booking={booking} />
+            <PromoBox booking={booking} onChange={setBooking} />
           </div>
 
           <div className="space-y-4">
