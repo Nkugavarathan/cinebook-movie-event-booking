@@ -40,8 +40,19 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus status;
 
+    /** Amount to pay: subtotalAmount - discountAmount. */
     @Column(precision = 10, scale = 2)
     private BigDecimal totalAmount;
+
+    /** Sum of seat prices before any promo code (null on old bookings = totalAmount). */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal subtotalAmount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discountAmount;
+
+    /** Promo code applied at checkout, if any. */
+    private String promoCode;
 
     private String currency;
 

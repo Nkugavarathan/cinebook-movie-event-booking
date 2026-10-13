@@ -32,6 +32,7 @@ public class DataSeeder implements ApplicationRunner {
     private final SeatRepository seatRepo;
     private final ShowTimeRepository showTimeRepo;
     private final EventRepository eventRepo;
+    private final PromoCodeRepository promoRepo;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.email}")
@@ -64,6 +65,9 @@ public class DataSeeder implements ApplicationRunner {
         }
         if (seedDemo && eventRepo.count() == 0) {
             seedEvents();
+        }
+        if (seedDemo && promoRepo.count() == 0) {
+            seedPromos();
         }
     }
 
@@ -164,6 +168,23 @@ public class DataSeeder implements ApplicationRunner {
         }
         showTimeRepo.saveAll(shows);
         log.info("Seeded demo events: {} events at {}, {} performances", events.size(), venue.getName(), shows.size());
+    }
+
+    private void seedPromos() {
+        boolean lkr = "lkr".equalsIgnoreCase(currency);
+        promoRepo.save(PromoCode.builder()
+                .code("FIRSTSHOW20").description("20% off your first show")
+                .discountType(DiscountType.PERCENT).discountValue(new BigDecimal("20"))
+                .maxDiscount(new BigDecimal(lkr ? "1000" : "5"))
+                .expiresAt(java.time.LocalDateTime.now().plusDays(60))
+                .usageLimit(500).perUserLimit(1).active(true).build());
+        promoRepo.save(PromoCode.builder()
+                .code("WEEKEND500").description(lkr ? "LKR 500 off orders over LKR 3,000" : "3 off orders over 20")
+                .discountType(DiscountType.FIXED).discountValue(new BigDecimal(lkr ? "500" : "3"))
+                .minOrderAmount(new BigDecimal(lkr ? "3000" : "20"))
+                .expiresAt(java.time.LocalDateTime.now().plusDays(30))
+                .perUserLimit(3).active(true).build());
+        log.info("Seeded demo promo codes FIRSTSHOW20 and WEEKEND500");
     }
 
     private Event event(String name, String category, String performer, int duration, String age, String description, String poster) {

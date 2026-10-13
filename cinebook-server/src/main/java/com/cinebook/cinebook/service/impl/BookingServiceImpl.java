@@ -139,6 +139,7 @@ public class BookingServiceImpl implements BookingService {
                     .build());
         }
         booking.setTotalAmount(total);
+        booking.setSubtotalAmount(total);
 
         // If another request grabbed a seat in the meantime the unique key fails here -> HTTP 409.
         Booking saved = bookingRepo.saveAndFlush(booking);

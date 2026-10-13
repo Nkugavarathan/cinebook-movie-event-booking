@@ -72,6 +72,8 @@ public class DtoMapper {
     public BookingResponseDTO booking(Booking b) {
         User u = b.getUser();
         return new BookingResponseDTO(b.getId(), b.getReference(), b.getStatus(), b.getTotalAmount(),
+                b.getSubtotalAmount() != null ? b.getSubtotalAmount() : b.getTotalAmount(),
+                b.getDiscountAmount(), b.getPromoCode(),
                 b.getCurrency(), b.getSeatLabels(),
                 b.getSeats().stream()
                         .map(bs -> new BookingSeatDTO(bs.getSeat().getId(), bs.getSeatLabel(), bs.getSeatType(), bs.getPrice()))

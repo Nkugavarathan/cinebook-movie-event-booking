@@ -10,7 +10,11 @@ public record BookingResponseDTO(
         Long id,
         String reference,
         BookingStatus status,
+        /** What the customer pays (after any promo discount). */
         BigDecimal totalAmount,
+        BigDecimal subtotalAmount,
+        BigDecimal discountAmount,
+        String promoCode,
         String currency,
         String seatLabels,
         List<BookingSeatDTO> seats,

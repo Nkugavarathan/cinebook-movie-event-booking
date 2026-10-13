@@ -47,6 +47,7 @@ public class PaymentService {
     private final BookingSeatRepository bookingSeatRepo;
     private final ProcessedStripeEventRepository processedEventRepo;
     private final BookingService bookingService;
+    private final PromoService promoService;
     private final StripeGateway stripe;
     private final CurrentUser currentUser;
     private final DtoMapper mapper;
@@ -55,7 +56,7 @@ public class PaymentService {
     @Value("${app.client-url}")
     private String clientUrl;
 
-    @Transactional
+    @Transactional(noRollbackFor = com.cinebook.cinebook.exception.PromoInvalidatedException.class)
     public CheckoutResponse createCheckout(Long bookingId, CheckoutRequest contact) {
         stripe.requireConfigured();
         User user = currentUser.require();
@@ -70,6 +71,9 @@ public class PaymentService {
         if (booking.getStatus() != BookingStatus.PENDING || booking.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw ApiException.conflict("Your seat hold has expired. Please select your seats again.");
         }
+
+        // The promo may have expired or run out since it was applied (removes it and explains if so).
+        promoService.revalidateBeforePayment(booking);
 
         String email = contact.email().trim().toLowerCase();
         boolean contactChanged = !email.equals(booking.getContactEmail());
@@ -137,6 +141,12 @@ public class PaymentService {
                             .build())
                     .build());
         });
+
+        if (booking.getPromoCode() != null && booking.getDiscountAmount() != null && booking.getDiscountAmount().signum() > 0) {
+            String coupon = stripe.createOneTimeCoupon("Promo " + booking.getPromoCode(),
+                    stripe.toMinorUnits(booking.getDiscountAmount(), currency), currency);
+            params.addDiscount(SessionCreateParams.Discount.builder().setCoupon(coupon).build());
+        }
 
         Session session = stripe.createSession(params.build());
         booking.setStripeSessionId(session.getId());

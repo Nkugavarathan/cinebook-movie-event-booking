@@ -160,6 +160,9 @@ public class TicketMailService {
                 + String.format(row, "Was on", esc(st.getStartsAt().format(WHEN)))
                 + String.format(row, st.isEvent() ? "Venue" : "Cinema", esc(st.getScreen().getTheater().getName()))
                 + String.format(row, "Seats", esc(b.getSeatLabels()) + " <span style=\"color:#8a8aa0;font-weight:400\">(released)</span>")
+                + (b.getPromoCode() != null && b.getDiscountAmount() != null
+                    ? String.format(row, "Promo " + esc(b.getPromoCode()), "-" + esc(money(b.getDiscountAmount(), b.getCurrency())))
+                    : "")
                 + String.format(row, "You paid", esc(money(b.getTotalAmount(), b.getCurrency())))
                 + (fee.signum() > 0 ? String.format(row, "Cancellation fee", esc(money(fee, b.getCurrency()))) : "");
         return """
@@ -210,6 +213,9 @@ public class TicketMailService {
                 + String.format(row, st.isEvent() ? "Venue" : "Cinema", esc(st.getScreen().getTheater().getName()))
                 + String.format(row, st.isEvent() ? "Hall" : "Screen", esc(st.getScreen().getScreenName()))
                 + String.format(row, "Seats", esc(b.getSeatLabels()))
+                + (b.getPromoCode() != null && b.getDiscountAmount() != null
+                    ? String.format(row, "Promo " + esc(b.getPromoCode()), "-" + esc(money(b.getDiscountAmount(), b.getCurrency())))
+                    : "")
                 + String.format(row, "Paid", esc(TicketPdfService.money(b)))
                 + String.format(row, "Booking ref", esc(b.getReference()));
         String poster = st.getPosterUrl() != null

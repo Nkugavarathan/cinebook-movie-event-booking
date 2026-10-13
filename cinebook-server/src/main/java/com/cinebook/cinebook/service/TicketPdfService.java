@@ -120,7 +120,10 @@ public class TicketPdfService {
             PdfPTable paid = new PdfPTable(2);
             paid.setWidthPercentage(100);
             paid.setSpacingBefore(16);
-            PdfPCell l = new PdfPCell(text("Amount paid", 10, Font.NORMAL, MUTED));
+            String paidLabel = b.getPromoCode() != null && b.getDiscountAmount() != null
+                    ? "Amount paid  (promo " + b.getPromoCode() + " -" + Money.format(b.getDiscountAmount(), b.getCurrency()) + ")"
+                    : "Amount paid";
+            PdfPCell l = new PdfPCell(text(paidLabel, 10, Font.NORMAL, MUTED));
             PdfPCell r = new PdfPCell(text(money(b), 14, Font.BOLD, INK));
             for (PdfPCell c : new PdfPCell[]{l, r}) {
                 c.setBorder(Rectangle.TOP);

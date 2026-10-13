@@ -59,6 +59,30 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByUserId(Long userId);
 
+    /**
+     * Uses of a promo code that count towards its limits: paid bookings, plus holds still being paid
+     * (so two people can't both grab the last use). Abandoned / refunded bookings free the use again.
+     */
+    @Query("""
+            select count(b) from Booking b
+            where upper(b.promoCode) = upper(:code) and b.id <> :excludeId
+              and (b.status = :confirmed or (b.status = :pending and b.expiresAt > :now))
+              and (:userId is null or b.user.id = :userId)
+            """)
+    long countPromoUses(@Param("code") String code, @Param("excludeId") Long excludeId,
+                        @Param("userId") Long userId, @Param("now") LocalDateTime now,
+                        @Param("confirmed") BookingStatus confirmed, @Param("pending") BookingStatus pending);
+
+    /** Per code: [CODE, paid uses, total discount given]. */
+    @Query("""
+            select upper(b.promoCode), count(b), coalesce(sum(b.discountAmount), 0)
+            from Booking b where b.status = :status and b.promoCode is not null
+            group by upper(b.promoCode)
+            """)
+    List<Object[]> promoStats(@Param("status") BookingStatus status);
+
+    boolean existsByPromoCodeIgnoreCase(String code);
+
     @Query("select coalesce(sum(b.totalAmount), 0) from Booking b where b.status = :status")
     BigDecimal sumAmountByStatus(@Param("status") BookingStatus status);
 

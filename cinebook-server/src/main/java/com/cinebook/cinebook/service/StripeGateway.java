@@ -70,6 +70,23 @@ public class StripeGateway {
         }
     }
 
+    /** One-off coupon so Stripe Checkout shows the promo discount as its own line. */
+    public String createOneTimeCoupon(String name, long amountOffMinor, String currency) {
+        requireConfigured();
+        try {
+            return com.stripe.model.Coupon.create(com.stripe.param.CouponCreateParams.builder()
+                    .setName(name)
+                    .setAmountOff(amountOffMinor)
+                    .setCurrency(currency)
+                    .setDuration(com.stripe.param.CouponCreateParams.Duration.ONCE)
+                    .setMaxRedemptions(1L)
+                    .build()).getId();
+        } catch (StripeException e) {
+            log.error("Stripe coupon create failed", e);
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Could not apply the discount: " + e.getUserMessage());
+        }
+    }
+
     public Session retrieveSession(String sessionId) {
         requireConfigured();
         try {
