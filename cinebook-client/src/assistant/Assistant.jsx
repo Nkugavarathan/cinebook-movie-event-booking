@@ -53,7 +53,8 @@ const uid = () => ++nextId
 export default function Assistant() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = useAuth()
+  const auth = useAuth()
+  const user = auth.isAuthed ? auth.user : null
 
   const [config, setConfig] = useState(null)
   const [open, setOpen] = useState(false)
@@ -88,8 +89,8 @@ export default function Assistant() {
     for (const a of actions || []) {
       if (a.type === "navigate" && a.path) {
         navigate(a.path)
-        // on phones the panel covers the page: step aside so the page is visible
-        if (window.matchMedia("(max-width: 639px)").matches) setOpen(false)
+        // step aside where the customer has to fill in the page (checkout), and on phones where the panel covers it
+        if (a.path.startsWith("/checkout") || window.matchMedia("(max-width: 639px)").matches) setOpen(false)
       }
       if (a.type === "login") save(RESUME_KEY, true, sessionStorage)
     }
@@ -328,7 +329,7 @@ export default function Assistant() {
                     <p className={`whitespace-pre-wrap text-[14.5px] leading-relaxed ${m.error ? "text-brand" : ""}`}>{m.text}</p>
                     <Cards cards={m.cards} onOpen={(p) => runActions([{ type: "navigate", path: p }])} onAsk={(t) => send(t)} />
                     {(m.actions || []).some((a) => a.type === "login") && !user && (
-                      <button onClick={() => { save(RESUME_KEY, true, sessionStorage); navigate("/login", { state: { from: location.pathname } }); if (window.matchMedia("(max-width: 639px)").matches) setOpen(false) }}
+                      <button onClick={() => { save(RESUME_KEY, true, sessionStorage); setOpen(false); navigate("/login", { state: { from: location.pathname } }) }}
                         className="btn-primary mt-3 px-4 py-2 text-sm">
                         <LogIn size={15} /> Sign in to continue
                       </button>
@@ -370,7 +371,7 @@ export default function Assistant() {
             className="flex items-end gap-2 rounded-2xl border border-line bg-surface-2 p-1.5 pl-3.5 transition focus-within:border-faint">
             <textarea ref={input} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft) } }}
-              placeholder={busy ? "Working on it..." : "Ask about movies, events or your tickets"}
+              placeholder={busy ? "Working on it..." : "Message CineBook"}
               className="max-h-36 min-h-[2.25rem] flex-1 resize-none bg-transparent py-2 text-[14px] text-ink outline-none placeholder:text-faint" />
             {speaker.speaking && (
               <button type="button" onClick={speaker.stop} aria-label="Stop speaking" title="Stop speaking"

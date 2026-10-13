@@ -25,6 +25,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 - **Ratings & reviews**: after attending, rate a movie or event 1-5 stars with a comment; averages show on cards and detail pages
 - **Promo codes** at checkout (e.g. `FIRSTSHOW20`, `WEEKEND500`): discount shown on the order summary and on Stripe's page
 - **Refund confirmation email** whenever a booking is refunded
+- **CineBook Concierge (AI booking assistant)**: a chat and voice assistant in the bottom-right corner. Say or type "two tickets for Dune tomorrow evening" - it finds the movie (even if the name is misheard), opens its page, lists matching shows, picks the best seats together, holds them and opens checkout. Replies are read aloud in a natural voice, and after a spoken question it listens again, so a whole booking can be done hands-free. It also answers questions about your tickets, refunds and promo codes. Powered by Google Gemini (key stays on the server)
 - **Cancel & refund yourself**: can't make it? Cancel a paid ticket up to 24 hours before the show and the money goes straight back to your card via Stripe; the seats go back on sale
 
 **Admins**
@@ -101,6 +102,15 @@ A ticket QR contains `CINEBOOK:<reference>`. Scanning locks the booking row, so 
 - Before the Stripe session is created the code is re-checked; if it expired meanwhile it's removed and the customer sees the new total.
 - The discount is sent to Stripe as a one-time coupon, so Checkout shows "Promo CODE -LKR x" and charges the discounted total; the server verifies that amount when confirming. Refunds return what was actually paid.
 
+### Booking assistant
+- The widget talks only to `/api/assistant/*` on our server; the Gemini key never reaches the browser. Without `GEMINI_API_KEY` the widget stays hidden.
+- Gemini decides what to do and calls our tools through function calling: `search_catalog`, `get_showtimes`, `check_seats`, `hold_seats`, `open_page`, `get_my_bookings`. Tools go through the normal services, so seat locks, hold limits and ownership rules are the same as in the app. The assistant never takes payment - it holds seats and opens the Stripe checkout page.
+- It confirms show, time, seats and total before holding. Holding seats needs a signed-in customer; if they are signed out it shows a sign-in button and carries on afterwards.
+- Best seats: the most central block of adjacent seats about two thirds back from the screen, in one seat class.
+- Voice input uses the browser's speech recognition (live captions in Chrome, Edge and Safari). Other browsers record a short clip, stop on silence and transcribe it with Gemini. Replies are spoken with Gemini text-to-speech (voices Aoede, Kore, Charon, Puck, chosen in the widget's menu); if that fails the browser's own voice is used.
+- English, Sinhala and Tamil speech input; the assistant answers in the customer's language.
+- Rate limited to 20 requests per minute per user or IP (`ASSISTANT_RPM`), and repeated phrases are spoken from a cache.
+
 ### How double booking is prevented
 - Each held or booked seat is a `booking_seat` row with `locked = TRUE`. The unique key `(show_time_id, seat_id, locked)` means only one live booking can own a seat. Released rows get `locked = NULL`, and NULLs never collide, so history is kept.
 - Two people clicking the same seat at the same moment: one insert wins and the other gets **HTTP 409** ("seat was just taken"). Tested with 8 parallel requests: 1 success, 7 conflicts.
@@ -143,6 +153,10 @@ MAIL_USERNAME=you@gmail.com        # ticket emails (Gmail SMTP)
 MAIL_PASSWORD=xxxxxxxxxxxxxxxx    # Gmail App Password, not your normal password
 REFUND_CUTOFF_HOURS=24            # customers can self-cancel until this many hours before the show
 REFUND_FEE_PERCENT=0              # cancellation fee kept from customer refunds (0 = full refund)
+GEMINI_API_KEY=                   # booking assistant, from https://aistudio.google.com/apikey (widget hidden if empty)
+GEMINI_MODEL=gemini-2.5-flash     # optional; chat model
+GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts   # optional; voice model
+GEMINI_TTS_VOICE=Aoede            # optional; default voice
 ```
 On first start the server:
 - creates the admin account **admin@cinebook.com / Admin@123** (change it with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
@@ -206,6 +220,10 @@ All responses are JSON. Errors look like `{"status":409,"error":"Conflict","mess
 | GET | `/api/showtimes/{id}` | Showtime details (`kind` = `MOVIE` or `EVENT`) |
 | GET | `/api/showtimes/{id}/seats` | Seat map: each seat's type, price and `AVAILABLE` / `HELD` / `BOOKED` status |
 | GET | `/api/payments/config` | Whether Stripe is configured |
+| GET | `/api/assistant/status` | Whether the assistant is enabled, and its voices |
+| POST | `/api/assistant/chat` | `{messages:[{role,text}], path, language}` → `{reply, cards, actions, signedIn}` (token optional; needed to hold seats) |
+| POST | `/api/assistant/speech` | `{text, voice}` → `audio/wav` |
+| POST | `/api/assistant/transcribe` | multipart `audio` → `{text}` (fallback speech-to-text) |
 | POST | `/api/payments/webhook` | Stripe webhook (signature verified) |
 
 ### Signed-in user (`Authorization: Bearer <token>`)

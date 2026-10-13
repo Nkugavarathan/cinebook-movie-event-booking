@@ -38,10 +38,10 @@ public class AssistantController {
     private final GeminiClient gemini;
     private final CurrentUser currentUser;
 
-    @Value("${gemini.tts-voice:Aoede}")
+    @Value("${gemini.tts-voice:${GEMINI_TTS_VOICE:Aoede}}")
     private String defaultVoice;
 
-    @Value("${assistant.requests-per-minute:20}")
+    @Value("${assistant.requests-per-minute:${ASSISTANT_RPM:20}}")
     private int requestsPerMinute;
 
     private final Map<String, Deque<Long>> hits = new ConcurrentHashMap<>();

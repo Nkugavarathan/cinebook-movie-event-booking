@@ -185,7 +185,12 @@ public class AssistantTools {
         if (cards.size() > 0 && cards.size() <= 8) putCards(turn, "titles", cards);
         ObjectNode out = json.createObjectNode();
         out.put("count", results.size()).set("results", results);
-        if (results.isEmpty()) out.put("note", "Nothing matched. Try search_catalog with no query to see everything showing.");
+        if (results.isEmpty()) {
+            out.put("note", "Nothing matched. Voice input may have misheard the name - these are all titles showing:");
+            ArrayNode all = out.putArray("allTitles");
+            movieService.listPublic(null, null, null).forEach(m -> all.addObject().put("kind", "movie").put("id", m.id()).put("title", m.title()));
+            eventService.listPublic(null, null).forEach(e -> all.addObject().put("kind", "event").put("id", e.id()).put("title", e.name()));
+        }
         return out;
     }
 
@@ -194,7 +199,8 @@ public class AssistantTools {
         String q = normalize(query);
         return movieService.listPublic(null, null, null).stream()
                 .filter(m -> similarity(q, normalize(m.title())) >= 0.6
-                        || Arrays.stream(normalize(m.title()).split(" ")).anyMatch(w -> w.length() > 2 && similarity(q, w) >= 0.7))
+                        || Arrays.stream(normalize(m.title()).split(" ")).filter(w -> w.length() > 2)
+                        .anyMatch(w -> Arrays.stream(q.split(" ")).anyMatch(qw -> similarity(qw, w) >= 0.7 || soundsLike(qw, w))))
                 .toList();
     }
 
@@ -460,7 +466,8 @@ public class AssistantTools {
     private void fn(ArrayNode list, String name, String desc, ObjectNode params, List<String> required) {
         ObjectNode f = list.addObject().put("name", name).put("description", desc);
         if (!required.isEmpty()) required.forEach(r -> params.withArray("required").add(r));
-        f.set("parameters", params);
+        // Gemini rejects an object schema without properties, so parameterless tools send none
+        if (!params.path("properties").isEmpty()) f.set("parameters", params);
     }
 
     private ObjectNode props(java.util.function.Consumer<ObjectNode> body) {
@@ -537,6 +544,19 @@ public class AssistantTools {
 
     private static String normalize(String s) {
         return s.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
+    }
+
+    /** Same consonant skeleton, e.g. "doon" / "dune", "avenjers" / "avengers". */
+    private static boolean soundsLike(String a, String b) {
+        if (a.length() < 3 || b.length() < 3) return false;
+        String ka = skeleton(a), kb = skeleton(b);
+        return ka.length() >= 2 && (ka.equals(kb) || similarity(ka, kb) >= 0.75);
+    }
+
+    private static String skeleton(String w) {
+        String s = w.charAt(0) + w.substring(1).replaceAll("[aeiouyhw]", "");
+        s = s.replace("ph", "f").replace("ck", "k").replace('c', 'k').replace('q', 'k').replace('z', 's').replace('j', 'g');
+        return s.replaceAll("(.)\\1+", "$1");
     }
 
     /** 1 - normalised Levenshtein distance. */

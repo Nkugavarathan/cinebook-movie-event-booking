@@ -42,7 +42,7 @@ public class AssistantService {
     private final RefundPolicy refundPolicy;
     private final ObjectMapper json;
 
-    @Value("${gemini.model:gemini-2.5-flash}")
+    @Value("${gemini.model:${GEMINI_MODEL:gemini-2.5-flash}}")
     private String chatModel;
 
     @Value("${app.currency}")

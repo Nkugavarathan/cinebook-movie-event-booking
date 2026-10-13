@@ -38,16 +38,16 @@ public class GeminiClient {
     private final ObjectMapper json;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-    @Value("${gemini.base-url:https://generativelanguage.googleapis.com/v1beta/models/}")
+    @Value("${gemini.base-url:${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta/models/}}")
     private String baseUrl;
 
-    @Value("${gemini.api-key:}")
+    @Value("${gemini.api-key:${GEMINI_API_KEY:}}")
     private String apiKey;
 
-    @Value("${gemini.model:gemini-2.5-flash}")
+    @Value("${gemini.model:${GEMINI_MODEL:gemini-2.5-flash}}")
     private String chatModel;
 
-    @Value("${gemini.tts-model:gemini-2.5-flash-preview-tts}")
+    @Value("${gemini.tts-model:${GEMINI_TTS_MODEL:gemini-2.5-flash-preview-tts}}")
     private String ttsModel;
 
     public GeminiClient(ObjectMapper json) {
