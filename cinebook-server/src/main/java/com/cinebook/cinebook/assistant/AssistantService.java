@@ -4,7 +4,6 @@ import com.cinebook.cinebook.model.User;
 import com.cinebook.cinebook.security.CurrentUser;
 import com.cinebook.cinebook.service.EventService;
 import com.cinebook.cinebook.service.MovieService;
-import com.cinebook.cinebook.service.RefundPolicy;
 import com.cinebook.cinebook.service.TheaterService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,14 +38,11 @@ public class AssistantService {
     private final MovieService movieService;
     private final EventService eventService;
     private final TheaterService theaterService;
-    private final RefundPolicy refundPolicy;
+    private final KnowledgeBase knowledgeBase;
     private final ObjectMapper json;
 
     @Value("${gemini.model:${GEMINI_MODEL:gemini-2.5-flash}}")
     private String chatModel;
-
-    @Value("${app.currency}")
-    private String currency;
 
     @Value("${app.booking.hold-minutes}")
     private int holdMinutes;
@@ -127,7 +123,6 @@ public class AssistantService {
     private String systemPrompt(Request req) {
         LocalDateTime now = LocalDateTime.now();
         User user = currentUser.find().orElse(null);
-        String money = currency.toUpperCase(Locale.ROOT);
 
         String movies = movieService.listPublic(null, null, null).stream().limit(40)
                 .map(m -> "- movie id " + m.id() + ": " + m.title() + " (" + nz(m.certificate()) + ", " + nz(m.genre())
@@ -169,15 +164,12 @@ public class AssistantService {
                 - Never invent showtimes, prices or availability: only state what tools returned.
                 - Max %d seats per booking.
 
-                POLICIES
-                - Prices are in %s. Seat classes: Standard, Premium, VIP.
-                - Seats are held for %d minutes while paying. Payment is by card on the secure Stripe checkout.
-                - Customers can cancel a paid ticket themselves for a refund until %d hours before the show%s, from the \
-                booking page. After that, or after check-in, no refund. You cannot refund for them - open the booking page.
-                - Promo codes are entered on the checkout page.
-                - Tickets (with QR code) are emailed after payment and are always in My Tickets. Show the QR at the door.
+                ANSWERING QUESTIONS
+                - For questions about accounts, payment, tickets, refunds, promo codes, check-in or how the assistant works,                 answer from the KNOWLEDGE BASE below. For anything about this customer's own bookings, call get_my_bookings.
+                - If neither the knowledge base nor a tool covers it, say you are not sure and suggest what they can do;                 never make up policies, prices, phone numbers or email addresses.
+                - Never ask for or accept card numbers, passwords or one-time codes.
 
-                CONTEXT
+                                CONTEXT
                 - Now: %s.
                 - Customer: %s.
                 - Current page: %s.
@@ -188,15 +180,18 @@ public class AssistantService {
 
                 EVENTS
                 %s
+
+                KNOWLEDGE BASE
+                %s
                 """.formatted(
-                holdMinutes, maxSeats, money, holdMinutes, refundPolicy.cutoffHours(),
-                refundPolicy.feePercent().signum() == 0 ? " (full refund)" : " (minus a " + refundPolicy.feePercent().stripTrailingZeros().toPlainString() + "% fee)",
+                holdMinutes, maxSeats,
                 now.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, h:mm a", Locale.ENGLISH)),
                 user == null ? "not signed in (they must sign in before seats can be held)" : user.getName() + " (signed in)",
                 describePage(req.path()),
                 venues.isEmpty() ? "none yet" : venues,
                 movies.isEmpty() ? "(none)" : movies,
-                events.isEmpty() ? "(none)" : events);
+                events.isEmpty() ? "(none)" : events,
+                knowledgeBase.text());
     }
 
     private String describePage(String path) {

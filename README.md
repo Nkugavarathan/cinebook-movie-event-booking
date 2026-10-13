@@ -108,6 +108,9 @@ A ticket QR contains `CINEBOOK:<reference>`. Scanning locks the booking row, so 
 - It confirms show, time, seats and total before holding. Holding seats needs a signed-in customer; if they are signed out it shows a sign-in button and carries on afterwards.
 - Best seats: the most central block of adjacent seats about two thirds back from the screen, in one seat class.
 - Voice input uses the browser's speech recognition (live captions in Chrome, Edge and Safari). Other browsers record a short clip, stop on silence and transcribe it with Gemini. Replies are spoken with Gemini text-to-speech (voices Aoede, Kore, Charon, Puck, chosen in the widget's menu); if that fails the browser's own voice is used.
+- **Chat and voice in one conversation**: type or tap the mic for any message, mixed freely. Spoken questions get spoken answers (and the assistant listens again); typed questions get text answers, unless "Read typed replies aloud" is on. Spoken messages are marked "Spoken". The speaker button mutes all audio.
+- **Knowledge base**: help-centre answers (accounts, payment, holds, promo codes, tickets, check-in, refunds) come from `cinebook-server/src/main/resources/assistant/knowledge-base.md`. Values like `{holdMinutes}`, `{refundCutoffHours}` and `{currency}` are filled in from the live settings. To edit it without rebuilding, copy it somewhere, point `ASSISTANT_KB_FILE` at the copy, and changes apply on the next message. Live facts (catalog, showtimes, seats, the customer's bookings) come from the tools, never from this file.
+- **⋯ menu**: choose a voice and the speech language, turn on reading typed replies aloud, **download the conversation** as a text file (with times, typed/spoken marks, and the shows and bookings that were shown), or **clear the conversation** (asks to confirm). Conversations are kept only in the browser tab.
 - English, Sinhala and Tamil speech input; the assistant answers in the customer's language.
 - Rate limited to 20 requests per minute per user or IP (`ASSISTANT_RPM`), and repeated phrases are spoken from a cache.
 
@@ -157,6 +160,7 @@ GEMINI_API_KEY=                   # booking assistant, from https://aistudio.goo
 GEMINI_MODEL=gemini-2.5-flash     # optional; chat model
 GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts   # optional; voice model
 GEMINI_TTS_VOICE=Aoede            # optional; default voice
+ASSISTANT_KB_FILE=                # optional; path to an edited copy of the assistant knowledge base
 ```
 On first start the server:
 - creates the admin account **admin@cinebook.com / Admin@123** (change it with `ADMIN_EMAIL` / `ADMIN_PASSWORD`)

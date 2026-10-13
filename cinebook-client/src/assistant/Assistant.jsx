@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowRight, ArrowUp, Check, Ellipsis, LogIn, Maximize2, Mic, Minimize2, RotateCcw, Square, Volume2, VolumeX, X } from "lucide-react"
+import { ArrowRight, ArrowUp, Check, Download, Ellipsis, LogIn, Maximize2, Mic, Minimize2, Square, Trash2, Volume2, VolumeX, X } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import { Orb, Thinking, Waveform } from "./Visuals"
 import Cards from "./Cards"
 import { canListen, unlockAudio, useListener, useSpeaker } from "./voice"
+import { downloadTranscript } from "./transcript"
 
 const HISTORY_KEY = "cinebook_assistant_chat"
 const PREFS_KEY = "cinebook_assistant_prefs"
@@ -60,11 +61,12 @@ export default function Assistant() {
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [messages, setMessages] = useState(() => load(HISTORY_KEY, [], sessionStorage))
   const [draft, setDraft] = useState("")
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
-  const [prefs, setPrefs] = useState(() => ({ speak: true, voice: null, lang: "en-US", ...load(PREFS_KEY, {}) }))
+  const [prefs, setPrefs] = useState(() => ({ speak: true, speakTyped: false, voice: null, lang: "en-US", ...load(PREFS_KEY, {}) }))
   const handsFree = useRef(false)
   const scroller = useRef(null)
   const input = useRef(null)
@@ -106,7 +108,7 @@ export default function Assistant() {
     setNotice(null)
     setMenu(false)
     handsFree.current = viaVoice
-    const userMsg = { id: uid(), role: "user", text }
+    const userMsg = { id: uid(), role: "user", text, via: viaVoice ? "voice" : "text", at: Date.now() }
     const history = [...messagesRef.current, userMsg]
     setMessages(history)
     setDraft("")
@@ -118,11 +120,11 @@ export default function Assistant() {
         language: prefs.lang,
       }, { timeout: 90000 })
       const r = res.data
-      const reply = { id: uid(), role: "assistant", text: r.reply, cards: r.cards, actions: r.actions }
+      const reply = { id: uid(), role: "assistant", text: r.reply, cards: r.cards, actions: r.actions, at: Date.now() }
       setMessages((m) => [...m, reply])
       setBusy(false)
       runActions(r.actions)
-      if (prefs.speak || viaVoice) {
+      if (prefs.speak && (viaVoice || prefs.speakTyped)) {
         await speaker.speak(r.reply, voice)
         // hands-free: after answering a spoken question, listen again
         if (handsFree.current && !(r.actions || []).some((a) => a.type === "login")) {
@@ -132,9 +134,9 @@ export default function Assistant() {
     } catch (err) {
       setBusy(false)
       handsFree.current = false
-      setMessages((m) => [...m, { id: uid(), role: "assistant", error: true, text: errorMessage(err, "Sorry, something went wrong. Please try again.") }])
+      setMessages((m) => [...m, { id: uid(), role: "assistant", error: true, at: Date.now(), text: errorMessage(err, "Sorry, something went wrong. Please try again.") }])
     }
-  }, [busy, speaker, prefs.speak, prefs.lang, voice, runActions])
+  }, [busy, speaker, prefs.speak, prefs.speakTyped, prefs.lang, voice, runActions])
 
   const listener = useListener({
     lang: prefs.lang,
@@ -208,6 +210,7 @@ export default function Assistant() {
     setMessages([])
     setNotice(null)
     setMenu(false)
+    setConfirmClear(false)
     save(RESUME_KEY, false, sessionStorage)
   }
 
@@ -273,7 +276,7 @@ export default function Assistant() {
           onClick={() => { if (prefs.speak) speaker.stop(); setPrefs((p) => ({ ...p, speak: !p.speak })) }}>
           {prefs.speak ? <Volume2 size={17} /> : <VolumeX size={17} />}
         </IconButton>
-        <IconButton label="Settings" pressed={menu} onClick={() => setMenu((m) => !m)}>
+        <IconButton label="More options" pressed={menu} onClick={() => { setMenu((m) => !m); setConfirmClear(false) }}>
           <Ellipsis size={18} />
         </IconButton>
         <IconButton label={expanded ? "Smaller" : "Larger"} className="hidden sm:grid" onClick={() => setExpanded((e) => !e)}>
@@ -304,10 +307,35 @@ export default function Assistant() {
                 </button>
               ))}
             </div>
+            <MenuLabel>Replies</MenuLabel>
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-sm transition hover:bg-surface-2">
+              <span>
+                <span className="block font-medium">Read typed replies aloud</span>
+                <span className="block text-[11px] text-faint">Spoken questions always get spoken answers</span>
+              </span>
+              <input type="checkbox" className="peer sr-only" checked={prefs.speakTyped}
+                onChange={(e) => setPrefs((p) => ({ ...p, speakTyped: e.target.checked, speak: e.target.checked ? true : p.speak }))} />
+              <span aria-hidden="true" className="relative h-5 w-9 shrink-0 rounded-full bg-line transition peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4" />
+            </label>
             <div className="my-2 h-px bg-line" />
-            <button onClick={reset} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition hover:bg-surface-2">
-              <RotateCcw size={15} className="text-muted" /> New conversation
+            <button onClick={() => { downloadTranscript(messages, user); setMenu(false) }} disabled={!messages.length}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent">
+              <Download size={15} className="text-muted" /> Download conversation
             </button>
+            {confirmClear ? (
+              <div className="mt-1 rounded-xl border border-line bg-surface-2 p-2.5">
+                <p className="text-xs text-muted">Clear this conversation? This can't be undone.</p>
+                <div className="mt-2 flex gap-1.5">
+                  <button onClick={() => setConfirmClear(false)} className="flex-1 rounded-lg border border-line px-2 py-1.5 text-xs font-semibold transition hover:bg-surface">Keep</button>
+                  <button onClick={reset} className="flex-1 rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-600">Clear</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmClear(true)} disabled={!messages.length}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-brand transition hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent">
+                <Trash2 size={15} /> Clear conversation
+              </button>
+            )}
           </div>
         )}
       </header>
@@ -322,7 +350,12 @@ export default function Assistant() {
               <li key={m.id} className="assist-msg">
                 {m.role === "user" ? (
                   <div className="flex justify-end">
-                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-surface-2 px-3.5 py-2.5 text-[14px] leading-relaxed">{m.text}</p>
+                    <div className="flex max-w-[85%] flex-col items-end">
+                      <p className="whitespace-pre-wrap rounded-2xl rounded-br-md bg-surface-2 px-3.5 py-2.5 text-[14px] leading-relaxed">{m.text}</p>
+                      {m.via === "voice" && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-[10.5px] text-faint"><Mic size={10} /> Spoken</span>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="pr-2">
