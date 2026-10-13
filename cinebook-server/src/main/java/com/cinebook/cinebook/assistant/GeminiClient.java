@@ -133,10 +133,18 @@ public class GeminiClient {
                 throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "The assistant is busy right now. Please try again in a moment.");
             }
             if (res.statusCode() >= 400) {
-                log.warn("Gemini {} returned {}: {}", model, res.statusCode(), abbreviate(res.body()));
-                throw new ApiException(HttpStatus.BAD_GATEWAY, res.statusCode() == 400 || res.statusCode() == 403
-                        ? "The assistant could not be reached. Check GEMINI_API_KEY on the server."
-                        : "The assistant is unavailable right now. Please try again.");
+                String err = res.body() == null ? "" : res.body();
+                if (err.contains("CONSUMER_SUSPENDED")) {
+                    log.error("Gemini rejected GEMINI_API_KEY: the key has been SUSPENDED by Google. "
+                            + "Create a new key at https://aistudio.google.com/apikey and put it in cinebook-server/.env");
+                } else if (res.statusCode() == 400 && err.contains("API_KEY_INVALID") || res.statusCode() == 401 || res.statusCode() == 403) {
+                    log.error("Gemini rejected GEMINI_API_KEY ({}): {}", res.statusCode(), abbreviate(err));
+                } else {
+                    log.warn("Gemini {} returned {}: {}", model, res.statusCode(), abbreviate(err));
+                }
+                // customers never see configuration details
+                throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "Sorry, the assistant is unavailable right now. You can still book from the Movies and Events pages.");
             }
             return json.readTree(res.body());
         } catch (ApiException | ModelNotFound e) {
