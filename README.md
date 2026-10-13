@@ -6,7 +6,7 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 |---|---|---|---|
 | API server | `cinebook-server` | http://localhost:8080 | Java 17, Spring Boot 3.2, Spring Security (JWT), JPA, MySQL/MariaDB, Stripe Java SDK |
 | Customer site | `cinebook-client` | http://localhost:5173 | React 19, Vite, Tailwind CSS 4 |
-| Admin dashboard | `cinebook-admin` | http://localhost:5174 | React 19, Vite, Tailwind CSS 4 |
+| Admin dashboard | `cinebook-admin` | http://localhost:5173/admin/login (served by the admin dev server on 5174, forwarded by the client's) | React 19, Vite, Tailwind CSS 4 |
 
 ---
 
@@ -165,14 +165,14 @@ npm run dev        # http://localhost:5173
 ```bash
 cd cinebook-admin
 npm install
-npm run dev        # http://localhost:5174
+npm run dev        # keep running; open http://localhost:5173/admin/login (also http://localhost:5174/admin/login)
 ```
 The client reads `VITE_API_URL` (default `http://localhost:8080/api`). The admin calls `/api`, which its Vite dev server proxies to Spring Boot.
 
 **Scanning tickets with a phone:** browsers only allow the camera on HTTPS (or localhost). Run the admin with
 ```bash
 cd cinebook-admin
-npm run dev:phone   # https://<your-PC-IP>:5174 on the same Wi-Fi (accept the self-signed certificate once)
+npm run dev:phone   # https://<your-PC-IP>:5174/admin/login on the same Wi-Fi (accept the self-signed certificate once)
 ```
 Sign in as a STAFF or ADMIN account and open **Check-in**. Give someone staff access in Admin -> Users -> role "Door staff".
 

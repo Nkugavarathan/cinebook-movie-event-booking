@@ -10,7 +10,7 @@ export default function AdminHeader({ onMenu }) {
 
   const handleLogout = () => {
     logout()
-    navigate("/login")
+    navigate("/admin/login")
   }
 
   return (

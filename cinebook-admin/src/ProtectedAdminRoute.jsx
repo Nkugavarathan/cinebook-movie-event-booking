@@ -10,7 +10,7 @@ const ProtectedAdminRoute = () => {
   const location = useLocation()
 
   if (!token || (user?.role !== "ADMIN" && user?.role !== "STAFF")) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />
   }
   // Door staff only get the check-in scanner (the server enforces this too).
   if (user.role === "STAFF" && !location.pathname.startsWith("/admin/checkin")) {
