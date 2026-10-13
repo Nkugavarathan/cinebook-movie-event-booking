@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { CalendarDays, MapPin } from "lucide-react"
 import Poster from "./Poster"
+import { RatingChip } from "./Stars"
 import { dayChip, money } from "../lib/format"
 
 export default function EventCard({ event }) {
@@ -25,6 +26,7 @@ export default function EventCard({ event }) {
       <div className="flex flex-1 flex-col p-4">
         <h3 className="line-clamp-2 font-display text-lg font-semibold leading-snug group-hover:text-brand">{event.name}</h3>
         {event.performer && <p className="mt-1 truncate text-sm text-muted">{event.performer}</p>}
+        {event.reviewCount > 0 && <RatingChip avg={event.avgRating} count={event.reviewCount} className="mt-2 self-start" />}
         <div className="mt-3 space-y-1 text-xs text-muted">
           {event.venues && <p className="flex items-center gap-1.5 truncate"><MapPin size={13} />{event.venues}</p>}
           <p className="flex items-center gap-1.5">

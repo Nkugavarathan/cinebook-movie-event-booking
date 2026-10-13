@@ -114,6 +114,7 @@ export default function AdminShowTimesList() {
                   <th className="table-th">Where</th>
                   <th className="table-th">Prices (Std / Prem / VIP)</th>
                   <th className="table-th">Sold</th>
+                  <th className="table-th">Checked in</th>
                   <th className="table-th text-right">Actions</th>
                 </tr>
               </thead>
@@ -153,6 +154,13 @@ export default function AdminShowTimesList() {
                           </div>
                           <span className="text-xs tabular-nums text-muted">{sold}/{st.totalSeats}</span>
                         </div>
+                      </td>
+                      <td className="table-td whitespace-nowrap text-sm tabular-nums">
+                        {st.soldSeats ? (
+                          <span className={st.checkedInSeats >= st.soldSeats ? "font-semibold text-emerald-600" : ""}>
+                            {st.checkedInSeats} / {st.soldSeats}
+                          </span>
+                        ) : <span className="text-faint">-</span>}
                       </td>
                       <td className="table-td">
                         <div className="flex justify-end gap-1">

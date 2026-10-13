@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { CalendarClock, ChevronRight, MapPin, Ticket } from "lucide-react"
+import { CalendarClock, ChevronRight, MapPin, Ticket, Star } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import { BookingListSkeleton } from "../components/Skeletons"
 import { EmptyState, StatusBadge } from "../components/ui"
-import { dateTimeShort, longDate, money, parseDateTime, showStartsAt, time12 } from "../lib/format"
+import { dateTimeShort, listingPath, longDate, money, parseDateTime, showStartsAt, time12 } from "../lib/format"
 
 const TABS = [
   ["upcoming", "Upcoming"],
@@ -65,9 +65,10 @@ export default function MyBookings() {
         )}
         {list.map((b) => {
           const pendingLive = b.status === "PENDING" && parseDateTime(b.expiresAt) > now
+          const canRate = tab === "past" && b.status === "CONFIRMED"
           return (
+            <div key={b.id} className="relative">
             <Link
-              key={b.id}
               to={pendingLive ? `/checkout/${b.id}` : `/bookings/${b.id}`}
               className="card group flex items-center gap-4 p-4 transition hover:border-faint"
             >
@@ -87,6 +88,9 @@ export default function MyBookings() {
                     Free cancellation until {dateTimeShort(b.refundDeadline)}
                   </p>
                 )}
+                {b.checkedInAt && (
+                  <p className="mt-1.5 text-[11px] font-semibold text-emerald-400">Checked in {dateTimeShort(b.checkedInAt)}</p>
+                )}
                 {b.status === "REFUNDED" && b.refundAmount != null && (
                   <p className="mt-1.5 text-[11px] font-semibold text-sky-400">{money(b.refundAmount, b.currency)} refunded</p>
                 )}
@@ -97,6 +101,15 @@ export default function MyBookings() {
                 <ChevronRight className="text-faint transition group-hover:translate-x-0.5 group-hover:text-ink" />
               )}
             </Link>
+            {canRate && (
+              <Link
+                to={`${listingPath(b.showtime)}#reviews`}
+                className="absolute bottom-4 right-12 inline-flex items-center gap-1 rounded-lg bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-400 hover:bg-amber-400/25"
+              >
+                <Star size={13} fill="currentColor" /> Rate it
+              </Link>
+            )}
+            </div>
           )
         })}
       </div>

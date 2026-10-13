@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Ban, Eye, Search, ShieldCheck, ShieldOff, Trash2, UserCheck, UserPlus, Users, UserX } from "lucide-react"
+import { Ban, Eye, Search, ShieldCheck, Trash2, UserCheck, UserPlus, Users, UserX } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../../../api/axios"
 import { ConfirmDialog, Empty, PageHeader, TableSkeleton } from "../../../components/ui"
@@ -9,6 +9,7 @@ import { Avatar, RoleBadge, UserDetailDialog, UserStatus } from "./UserDialogs"
 const FILTERS = [
   ["all", "All", {}],
   ["USER", "Customers", { role: "USER" }],
+  ["STAFF", "Staff", { role: "STAFF" }],
   ["ADMIN", "Admins", { role: "ADMIN" }],
   ["blocked", "Blocked", { blocked: true }],
 ]
@@ -44,10 +45,12 @@ export default function UsersList() {
   const closeViewing = useCallback(() => setViewing(null), [])
 
   const ACTIONS = {
-    promote: { title: "Make admin?", label: "Make admin", danger: false, body: { role: "ADMIN" },
+    ADMIN: { title: "Make admin?", label: "Make admin", danger: false, body: { role: "ADMIN" },
       msg: (u) => `${u.name} will get full access to this admin dashboard.`, done: (u) => `${u.name} is now an admin` },
-    demote: { title: "Remove admin access?", label: "Make customer", danger: true, body: { role: "USER" },
-      msg: (u) => `${u.name} will lose access to the admin dashboard and become a regular customer.`, done: (u) => `${u.name} is now a customer` },
+    STAFF: { title: "Make door staff?", label: "Make staff", danger: false, body: { role: "STAFF" },
+      msg: (u) => `${u.name} will be able to sign in to the admin app and use only the ticket check-in scanner.`, done: (u) => `${u.name} is now door staff` },
+    USER: { title: "Make customer?", label: "Make customer", danger: true, body: { role: "USER" },
+      msg: (u) => `${u.name} will lose access to the admin app and become a regular customer.`, done: (u) => `${u.name} is now a customer` },
     block: { title: "Block this account?", label: "Block", danger: true, body: { blocked: true },
       msg: (u) => `${u.name} won't be able to sign in or book tickets. Existing bookings stay valid. You can unblock them any time.`, done: (u) => `${u.name} has been blocked` },
     unblock: { title: "Unblock this account?", label: "Unblock", danger: false, body: { blocked: false },
@@ -160,11 +163,17 @@ export default function UsersList() {
                         <button className="btn-icon" title="View details" onClick={() => setViewing(u.id)}><Eye size={17} /></button>
                         {!u.self && (
                           <>
-                            {u.role === "ADMIN" ? (
-                              <button className="btn-icon" title="Remove admin access" onClick={() => setConfirm({ user: u, action: "demote" })}><ShieldOff size={17} /></button>
-                            ) : (
-                              <button className="btn-icon" title="Make admin" onClick={() => setConfirm({ user: u, action: "promote" })}><ShieldCheck size={17} /></button>
-                            )}
+                            <select
+                              aria-label={`Role for ${u.name}`}
+                              title="Change role"
+                              value={u.role}
+                              onChange={(e) => setConfirm({ user: u, action: e.target.value })}
+                              className="mr-1 rounded-md border border-line bg-surface px-1.5 py-1 text-xs font-medium text-muted hover:text-ink"
+                            >
+                              <option value="USER">Customer</option>
+                              <option value="STAFF">Door staff</option>
+                              <option value="ADMIN">Admin</option>
+                            </select>
                             {u.blocked ? (
                               <button className="btn-icon hover:text-emerald-600!" title="Unblock" onClick={() => setConfirm({ user: u, action: "unblock" })}><UserCheck size={17} /></button>
                             ) : (

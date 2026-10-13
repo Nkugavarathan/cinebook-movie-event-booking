@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
-import { AlertTriangle, ArrowLeft, Download, Mail, Printer } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Download, Mail, Printer, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
@@ -114,7 +114,13 @@ export default function BookingDetail() {
                 <QRCodeSVG value={`CINEBOOK:${b.reference}`} size={168} level="M" />
               </div>
               <p className="mt-3 font-mono text-lg font-bold tracking-widest">{b.reference}</p>
-              <p className="text-xs text-muted">Show this code at the entrance</p>
+              {b.checkedInAt ? (
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+                  <CheckCircle2 size={14} /> Checked in {dateTimeShort(b.checkedInAt)}
+                </p>
+              ) : (
+                <p className="text-xs text-muted">Show this code at the entrance</p>
+              )}
             </>
           ) : (
             <p className="py-4 text-center text-sm text-muted">

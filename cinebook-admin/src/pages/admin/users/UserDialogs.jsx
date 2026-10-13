@@ -83,6 +83,9 @@ export function Avatar({ name = "?", size = "md" }) {
 }
 
 export function RoleBadge({ role }) {
+  if (role === "STAFF") {
+    return <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700 ring-1 ring-inset ring-sky-600/20">Door staff</span>
+  }
   return role === "ADMIN" ? (
     <span className="inline-flex rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 ring-1 ring-inset ring-violet-600/20">Admin</span>
   ) : (

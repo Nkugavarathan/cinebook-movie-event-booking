@@ -4,6 +4,8 @@ import { ArrowLeft, CalendarX, Clock, Clapperboard, Globe, MapPin, Play, Search,
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
 import TrailerModal from "../components/TrailerModal"
+import ReviewsSection from "../components/ReviewsSection"
+import { Stars } from "../components/Stars"
 import FilterDropdown from "../components/FilterDropdown"
 import { TIME_SLOTS, inBucket, priceBuckets, timeSlotOf } from "../lib/showFilters"
 import { DetailSkeleton } from "../components/Skeletons"
@@ -109,6 +111,11 @@ export default function MovieDetail() {
                 {m.duration > 0 && <span className="flex items-center gap-1.5"><Clock size={15} />{runtime(m.duration)}</span>}
                 {m.language && <span className="flex items-center gap-1.5"><Globe size={15} />{m.language}</span>}
                 {m.releaseDate && <span>Released {longDate(m.releaseDate)}</span>}
+                {m.reviewCount > 0 && (
+                  <a href="#reviews" className="flex items-center gap-1.5 hover:text-ink">
+                    <Stars value={m.avgRating} size={14} /> <span className="font-semibold text-ink">{m.avgRating.toFixed(1)}</span> ({m.reviewCount})
+                  </a>
+                )}
               </div>
               <p className="mt-5 max-w-3xl leading-relaxed text-muted">{m.description}</p>
               <dl className="mt-5 grid max-w-3xl gap-3 text-sm sm:grid-cols-2">
@@ -256,6 +263,8 @@ export default function MovieDetail() {
           </>
         )}
       </section>
+
+      <ReviewsSection kind="movies" id={id} title={m.title} />
 
       {trailer && <TrailerModal url={m.trailerUrl} onClose={() => setTrailer(false)} />}
     </div>

@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, CalendarX, Clock, Globe, MapPin, PartyPopper, ShieldCheck, Ticket, User } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import Poster from "../components/Poster"
+import ReviewsSection from "../components/ReviewsSection"
+import { Stars } from "../components/Stars"
 import { DetailSkeleton } from "../components/Skeletons"
 import { EmptyState } from "../components/ui"
 import { dayChip, longDate, money, runtime, time12 } from "../lib/format"
@@ -61,6 +63,11 @@ export default function EventDetail() {
                 {e.language && <span className="flex items-center gap-1.5"><Globe size={15} />{e.language}</span>}
                 {e.ageLimit && <span className="flex items-center gap-1.5"><ShieldCheck size={15} />{e.ageLimit}</span>}
                 {e.venues && <span className="flex items-center gap-1.5"><MapPin size={15} />{e.venues}</span>}
+                {e.reviewCount > 0 && (
+                  <a href="#reviews" className="flex items-center gap-1.5 hover:text-ink">
+                    <Stars value={e.avgRating} size={14} /> <span className="font-semibold text-ink">{e.avgRating.toFixed(1)}</span> ({e.reviewCount})
+                  </a>
+                )}
               </div>
               <div className="mt-7 flex flex-wrap items-center gap-4">
                 <a href="#dates" className="btn-primary px-7"><Ticket size={18} /> Book tickets</a>
@@ -125,6 +132,7 @@ export default function EventDetail() {
           )}
         </div>
       </section>
+      <ReviewsSection kind="events" id={id} title={e.name} />
     </div>
   )
 }
