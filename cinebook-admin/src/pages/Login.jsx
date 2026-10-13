@@ -5,25 +5,26 @@ import { useAuth } from "../context/AuthContext"
 import { errorMessage } from "../api/axios"
 import { Spinner } from "../components/ui"
 import PasswordInput from "../components/PasswordInput"
+import { homeFor } from "../ProtectedAdminRoute"
 
 export default function Login() {
   const { token, user, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || "/admin/dashboard"
+  const from = location.state?.from
   const [data, setData] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  if (token && user?.role === "ADMIN") return <Navigate to={from} replace />
+  if (token && (user?.role === "ADMIN" || user?.role === "STAFF")) return <Navigate to={from || homeFor(user.role)} replace />
 
   const submit = async (e) => {
     e.preventDefault()
     setError("")
     setLoading(true)
     try {
-      await login(data.email, data.password)
-      navigate(from, { replace: true })
+      const u = await login(data.email, data.password)
+      navigate(u.role === "STAFF" ? homeFor("STAFF") : from || homeFor(u.role), { replace: true })
     } catch (err) {
       setError(errorMessage(err, "Login failed"))
     } finally {
@@ -39,7 +40,7 @@ export default function Login() {
           <Clapperboard size={22} />
         </span>
         <h1 className="mt-5 font-display text-2xl font-bold">CineBook Admin</h1>
-        <p className="mt-1 text-sm text-muted">Sign in with an administrator account.</p>
+        <p className="mt-1 text-sm text-muted">Sign in with an admin or door-staff account.</p>
 
         {error && <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</p>}
 

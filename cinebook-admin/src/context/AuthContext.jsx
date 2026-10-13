@@ -23,10 +23,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
-  /** Only ADMIN accounts may use this app; the server enforces the same rule. */
+  /** ADMIN accounts get the full dashboard; STAFF only the check-in scanner. The server enforces the same rules. */
   const login = async (email, password) => {
     const { data } = await authApi.post("/login", { email, password })
-    if (data.role !== "ADMIN") {
+    if (data.role !== "ADMIN" && data.role !== "STAFF") {
       const err = new Error("This account does not have admin access.")
       err.response = { data: { message: err.message } }
       throw err

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom"
-import { BadgePercent, Building2, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
+import { BadgePercent, Building2, MessageSquareText, ScanLine, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
 
 const NAV = [
   ["/admin/dashboard", "Dashboard", LayoutDashboard],
@@ -8,12 +9,17 @@ const NAV = [
   ["/admin/theaters", "Theaters & venues", Building2],
   ["/admin/screens", "Screens & Seats", MonitorPlay],
   ["/admin/showtimes", "Showtimes", CalendarClock],
+  ["/admin/checkin", "Check-in", ScanLine],
   ["/admin/bookings", "Bookings", Ticket],
   ["/admin/promos", "Promo codes", BadgePercent],
+  ["/admin/reviews", "Reviews", MessageSquareText],
   ["/admin/users", "Users", Users],
 ]
 
 export default function AdminSidebar({ open, onClose }) {
+  const { user } = useAuth()
+  // Door staff only see the scanner.
+  const nav = user?.role === "STAFF" ? NAV.filter(([to]) => to === "/admin/checkin") : NAV
   return (
     <>
       {open && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -38,7 +44,7 @@ export default function AdminSidebar({ open, onClose }) {
         </div>
 
         <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
-          {NAV.map(([to, label, Icon]) => (
+          {nav.map(([to, label, Icon]) => (
             <NavLink
               key={to}
               to={to}

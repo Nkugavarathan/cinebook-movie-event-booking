@@ -84,4 +84,10 @@ public class Booking {
 
     /** When the refund confirmation email was sent. */
     private LocalDateTime refundEmailedAt;
+
+    /** When the ticket was scanned at the door (null = not yet). */
+    private LocalDateTime checkedInAt;
+
+    /** Email of the staff member who checked it in. */
+    private String checkedInBy;
 }

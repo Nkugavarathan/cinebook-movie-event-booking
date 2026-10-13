@@ -30,17 +30,19 @@ public class MovieServiceImpl implements MovieService {
     private final ShowTimeRepository showTimeRepo;
     private final BookingRepository bookingRepo;
     private final DtoMapper mapper;
+    private final com.cinebook.cinebook.service.ReviewService reviewService;
 
     @Override
     @Transactional(readOnly = true)
     public List<MovieSummaryDTO> listPublic(String search, String genre, String language) {
         Map<Long, Long> upcoming = upcomingCounts();
+        var ratings = reviewService.movieRatings();
         return movieRepo.findByActiveTrueOrderByReleaseDateDesc().stream()
                 .filter(m -> matches(m.getTitle(), search) || matches(m.getCastMembers(), search)
                         || matches(m.getDirector(), search))
                 .filter(m -> matches(m.getGenre(), genre))
                 .filter(m -> matches(m.getLanguage(), language))
-                .map(m -> mapper.movie(m, upcoming.getOrDefault(m.getId(), 0L)))
+                .map(m -> mapper.movie(m, upcoming.getOrDefault(m.getId(), 0L), ratings.get(m.getId())))
                 .toList();
     }
 
@@ -56,15 +58,16 @@ public class MovieServiceImpl implements MovieService {
                 .filter(st -> st.getStartsAt().isAfter(now))
                 .map(st -> mapper.showtime(st, true))
                 .toList();
-        return new MovieDetailDTO(mapper.movie(m, showtimes.size()), showtimes);
+        return new MovieDetailDTO(mapper.movie(m, showtimes.size(), reviewService.movieRatings().get(m.getId())), showtimes);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MovieSummaryDTO> listAll() {
         Map<Long, Long> upcoming = upcomingCounts();
+        var ratings = reviewService.movieRatings();
         return movieRepo.findAllByOrderByIdDesc().stream()
-                .map(m -> mapper.movie(m, upcoming.getOrDefault(m.getId(), 0L)))
+                .map(m -> mapper.movie(m, upcoming.getOrDefault(m.getId(), 0L), ratings.get(m.getId())))
                 .toList();
     }
 

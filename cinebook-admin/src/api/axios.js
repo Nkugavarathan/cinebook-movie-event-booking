@@ -1,6 +1,7 @@
 import axios from "axios"
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+// Relative by default: the Vite dev server proxies /api to Spring Boot (see vite.config.js).
+export const API_URL = import.meta.env.VITE_API_URL || "/api"
 export const TOKEN_KEY = "cinebook_admin_token"
 
 /** Talks to /api/admin/* (and the public API via absolute paths like "/movies"). */

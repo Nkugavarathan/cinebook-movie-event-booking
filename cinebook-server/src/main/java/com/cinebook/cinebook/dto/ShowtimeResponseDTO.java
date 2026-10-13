@@ -37,5 +37,8 @@ public record ShowtimeResponseDTO(
         boolean bookable,
         String kind,
         Long eventId,
-        String category) {
+        String category,
+        /** Seats sold (paid) and seats already checked in at the door. */
+        Long soldSeats,
+        Long checkedInSeats) {
 }

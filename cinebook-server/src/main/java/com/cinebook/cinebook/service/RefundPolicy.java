@@ -29,6 +29,7 @@ public class RefundPolicy {
 
     public boolean isRefundable(Booking b) {
         return b.getStatus() == BookingStatus.CONFIRMED
+                && b.getCheckedInAt() == null
                 && b.getStripePaymentIntentId() != null
                 && LocalDateTime.now().isBefore(deadline(b));
     }

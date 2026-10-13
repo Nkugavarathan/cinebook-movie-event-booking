@@ -21,5 +21,7 @@ public record EventSummaryDTO(
         LocalDate nextDate,
         BigDecimal fromPrice,
         String currency,
-        String venues) {
+        String venues,
+        Double avgRating,
+        long reviewCount) {
 }

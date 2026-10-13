@@ -17,5 +17,7 @@ public record MovieSummaryDTO(
         String castMembers,
         LocalDate releaseDate,
         boolean active,
-        long upcomingShows) {
+        long upcomingShows,
+        Double avgRating,
+        long reviewCount) {
 }

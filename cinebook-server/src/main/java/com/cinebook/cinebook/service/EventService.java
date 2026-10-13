@@ -28,6 +28,7 @@ public class EventService {
     private final ShowTimeRepository showTimeRepo;
     private final BookingRepository bookingRepo;
     private final DtoMapper mapper;
+    private final ReviewService reviewService;
 
     /** Active events, soonest first; events with no upcoming dates go last. */
     @Transactional(readOnly = true)
@@ -108,6 +109,7 @@ public class EventService {
     }
 
     private EventSummaryDTO summary(Event e, List<ShowTime> shows) {
+        ReviewService.Rating rating = reviewService.eventRatings().get(e.getId());
         LocalDate next = shows.stream().map(ShowTime::getShowDate).min(Comparator.naturalOrder()).orElse(null);
         BigDecimal from = shows.stream().map(ShowTime::getPriceStandard).filter(Objects::nonNull)
                 .min(Comparator.naturalOrder()).orElse(null);
@@ -115,7 +117,8 @@ public class EventService {
                 .distinct().collect(Collectors.joining(", "));
         return new EventSummaryDTO(e.getId(), e.getName(), e.getDescription(), e.getPosterUrl(), e.getBannerUrl(),
                 e.getCategory(), e.getPerformer(), e.getLanguage(), e.getAgeLimit(), e.getDuration(), e.getLocation(),
-                e.isActive(), shows.size(), next, from, mapper.currency(), venues.isEmpty() ? null : venues);
+                e.isActive(), shows.size(), next, from, mapper.currency(), venues.isEmpty() ? null : venues,
+                rating == null ? null : rating.average(), rating == null ? 0 : rating.count());
     }
 
     private void apply(Event e, EventRequestDTO dto) {

@@ -27,10 +27,14 @@ public class DtoMapper {
     }
 
     public MovieSummaryDTO movie(Movie m, long upcomingShows) {
+        return movie(m, upcomingShows, null);
+    }
+
+    public MovieSummaryDTO movie(Movie m, long upcomingShows, ReviewService.Rating rating) {
         return new MovieSummaryDTO(m.getId(), m.getTitle(), m.getDescription(), m.getPosterUrl(),
                 m.getBackdropUrl(), m.getTrailerUrl(), m.getDuration(), m.getGenre(), m.getLanguage(),
                 m.getCertificate(), m.getDirector(), m.getCastMembers(), m.getReleaseDate(), m.isActive(),
-                upcomingShows);
+                upcomingShows, rating == null ? null : rating.average(), rating == null ? 0 : rating.count());
     }
 
     public TheaterDetailDTO theater(Theater t, long screenCount) {
@@ -45,7 +49,11 @@ public class DtoMapper {
         Theater t = sc.getTheater();
         Long total = null;
         Long available = null;
+        Long sold = null;
+        Long checkedIn = null;
         if (withAvailability) {
+            sold = bookingSeatRepository.countPaidSeats(st.getId(), BookingStatus.CONFIRMED, false);
+            checkedIn = bookingSeatRepository.countPaidSeats(st.getId(), BookingStatus.CONFIRMED, true);
             total = seatRepository.countActiveByScreenId(sc.getId());
             long taken = bookingSeatRepository.countLocked(st.getId(),
                     EnumSet.of(BookingStatus.PENDING, BookingStatus.CONFIRMED));
@@ -61,7 +69,8 @@ public class DtoMapper {
                 sc.getId(), sc.getScreenName(), sc.getFormat(),
                 t.getId(), t.getName(), t.getCity(), t.getAddress(),
                 total, available, bookable,
-                st.getKind(), e != null ? e.getId() : null, e != null ? e.getCategory() : null);
+                st.getKind(), e != null ? e.getId() : null, e != null ? e.getCategory() : null,
+                sold, checkedIn);
     }
 
     public SeatDTO seat(Seat s, String status, java.math.BigDecimal price) {
@@ -89,6 +98,7 @@ public class DtoMapper {
                         : b.getStatus() == BookingStatus.CONFIRMED ? refundPolicy.customerRefundAmount(b) : null,
                 b.getCancelledBy(),
                 b.getTicketEmailedAt(),
-                b.getRefundEmailedAt());
+                b.getRefundEmailedAt(),
+                b.getCheckedInAt(), b.getCheckedInBy());
     }
 }

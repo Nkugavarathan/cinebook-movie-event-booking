@@ -17,6 +17,10 @@ import AddShowTime from "./pages/admin/showtimes/AddShowTime"
 import BookingsList from "./pages/admin/bookings/BookingsList"
 import UsersList from "./pages/admin/users/UsersList"
 import PromosList from "./pages/admin/promos/PromosList"
+import CheckIn from "./pages/admin/checkin/CheckIn"
+import ReviewsList from "./pages/admin/reviews/ReviewsList"
+import { useAuth } from "./context/AuthContext"
+import { homeFor } from "./ProtectedAdminRoute"
 
 export default function App() {
   return (
@@ -42,10 +46,18 @@ export default function App() {
             <Route path="/admin/bookings" element={<BookingsList />} />
             <Route path="/admin/users" element={<UsersList />} />
             <Route path="/admin/promos" element={<PromosList />} />
+            <Route path="/admin/checkin" element={<CheckIn />} />
+            <Route path="/admin/reviews" element={<ReviewsList />} />
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
   )
+}
+
+/** Unknown URLs go to the signed-in user's home (scanner for staff, dashboard for admins). */
+function Home() {
+  const { user } = useAuth()
+  return <Navigate to={homeFor(user?.role)} replace />
 }

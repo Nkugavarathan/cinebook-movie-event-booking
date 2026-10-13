@@ -19,6 +19,32 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findByStripeSessionId(String sessionId);
 
+    Optional<Booking> findByReferenceIgnoreCase(String reference);
+
+    /** A paid booking for this movie whose show has started (or was checked in) - i.e. they attended. */
+    @Query("""
+            select count(b) > 0 from Booking b join b.showTime st
+            where b.user.id = :userId and b.status = :status and st.movie.id = :movieId
+              and (b.checkedInAt is not null or st.showDate < :today or (st.showDate = :today and st.startTime <= :time))
+            """)
+    boolean attendedMovie(@Param("userId") Long userId, @Param("movieId") Long movieId, @Param("status") BookingStatus status,
+                          @Param("today") java.time.LocalDate today, @Param("time") java.time.LocalTime time);
+
+    @Query("""
+            select count(b) > 0 from Booking b join b.showTime st
+            where b.user.id = :userId and b.status = :status and st.event.id = :eventId
+              and (b.checkedInAt is not null or st.showDate < :today or (st.showDate = :today and st.startTime <= :time))
+            """)
+    boolean attendedEvent(@Param("userId") Long userId, @Param("eventId") Long eventId, @Param("status") BookingStatus status,
+                          @Param("today") java.time.LocalDate today, @Param("time") java.time.LocalTime time);
+
+    /** Paid bookings for a showtime, most recently checked in first. */
+    @Query("""
+            select b from Booking b where b.showTime.id = :showTimeId and b.status = :status and b.checkedInAt is not null
+            order by b.checkedInAt desc
+            """)
+    List<Booking> checkedInFor(@Param("showTimeId") Long showTimeId, @Param("status") BookingStatus status, Pageable pageable);
+
     boolean existsByReference(String reference);
 
     List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);
