@@ -17,6 +17,7 @@ import BookingDetail from "./pages/BookingDetail"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
 import NotFound from "./pages/NotFound"
+import Assistant from "./assistant/Assistant"
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -52,6 +53,7 @@ export default function App() {
         </Routes>
       </main>
       <Footer />
+      <Assistant />
     </div>
   )
 }

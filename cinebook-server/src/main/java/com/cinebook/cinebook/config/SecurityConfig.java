@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
                         // Stripe calls this; authenticity is checked with the signing secret instead.
                         .requestMatchers("/api/payments/webhook", "/api/payments/config").permitAll()
+                        // Booking assistant: open to visitors; holding seats still requires sign-in (checked in the tools).
+                        .requestMatchers("/api/assistant/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/movies/**", "/api/theaters/**", "/api/showtimes/**",
                                 "/api/events/**").permitAll()
