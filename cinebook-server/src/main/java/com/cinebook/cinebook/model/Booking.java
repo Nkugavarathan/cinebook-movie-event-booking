@@ -36,13 +36,23 @@ public class Booking {
     @Builder.Default
     private List<BookingSeat> seats = new ArrayList<>();
 
+    /** Popcorn, drinks and combos added at checkout. */
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    @Builder.Default
+    private List<BookingSnack> snacks = new ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status;
 
-    /** Amount to pay: subtotalAmount - discountAmount. */
+    /** Amount to pay: subtotalAmount - discountAmount + snacksAmount. */
     @Column(precision = 10, scale = 2)
     private BigDecimal totalAmount;
+
+    /** Sum of the snack lines (null = no snacks). Promo codes only discount the tickets. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal snacksAmount;
 
     /** Sum of seat prices before any promo code (null on old bookings = totalAmount). */
     @Column(precision = 10, scale = 2)
@@ -85,9 +95,20 @@ public class Booking {
     /** When the refund confirmation email was sent. */
     private LocalDateTime refundEmailedAt;
 
+    /** When the "your show starts soon" reminder was sent (null = not yet). */
+    private LocalDateTime reminderEmailedAt;
+
     /** When the ticket was scanned at the door (null = not yet). */
     private LocalDateTime checkedInAt;
 
     /** Email of the staff member who checked it in. */
     private String checkedInBy;
+
+    /** Tickets - promo + snacks. Call after changing the seats' subtotal, the promo or the snacks. */
+    public void recalculateTotal() {
+        BigDecimal tickets = subtotalAmount != null ? subtotalAmount : BigDecimal.ZERO;
+        BigDecimal discount = promoCode != null && discountAmount != null ? discountAmount : BigDecimal.ZERO;
+        BigDecimal snackTotal = snacksAmount != null ? snacksAmount : BigDecimal.ZERO;
+        totalAmount = tickets.subtract(discount).add(snackTotal);
+    }
 }

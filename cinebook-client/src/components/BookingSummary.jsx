@@ -1,4 +1,4 @@
-import { CalendarClock, MapPin, MonitorPlay } from "lucide-react"
+import { CalendarClock, MapPin, MonitorPlay, Popcorn } from "lucide-react"
 import Poster from "./Poster"
 import { SEAT_TYPES } from "../lib/seatTypes"
 import { longDate, money, time12 } from "../lib/format"
@@ -42,14 +42,23 @@ export default function BookingSummary({ booking }) {
             <span className="font-medium tabular-nums">{money(g.price * g.count, booking.currency)}</span>
           </div>
         ))}
+        {(booking.snacks || []).map((s) => (
+          <div key={s.snackId} className="flex items-start justify-between gap-4">
+            <p className="flex items-center gap-2 font-medium">
+              <Popcorn size={14} className="text-faint" />
+              {s.quantity} × {s.name}
+            </p>
+            <span className="font-medium tabular-nums">{money(s.lineTotal, booking.currency)}</span>
+          </div>
+        ))}
         {booking.promoCode && booking.discountAmount != null && (
           <>
             <div className="flex items-center justify-between border-t border-line pt-3 text-muted">
               <span>Subtotal</span>
-              <span className="tabular-nums">{money(booking.subtotalAmount, booking.currency)}</span>
+              <span className="tabular-nums">{money(Number(booking.subtotalAmount) + Number(booking.snacksAmount || 0), booking.currency)}</span>
             </div>
             <div className="flex items-center justify-between text-emerald-400">
-              <span>Promo <span className="font-mono font-semibold">{booking.promoCode}</span></span>
+              <span>Promo <span className="font-mono font-semibold">{booking.promoCode}</span>{booking.snacks?.length > 0 && <span className="text-xs text-muted"> (tickets only)</span>}</span>
               <span className="font-semibold tabular-nums">-{money(booking.discountAmount, booking.currency)}</span>
             </div>
           </>

@@ -99,6 +99,11 @@ public class DtoMapper {
                 b.getCancelledBy(),
                 b.getTicketEmailedAt(),
                 b.getRefundEmailedAt(),
-                b.getCheckedInAt(), b.getCheckedInBy());
+                b.getCheckedInAt(), b.getCheckedInBy(),
+                b.getSnacks().stream()
+                        .map(s -> new BookingSnackDTO(s.getSnack().getId(), s.getName(), s.getQuantity(), s.getUnitPrice(), s.getLineTotal()))
+                        .toList(),
+                b.getSnacksAmount(),
+                b.getReminderEmailedAt());
     }
 }

@@ -115,6 +115,21 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b where b.status = :status and b.confirmedAt >= :from")
     List<Booking> findByStatusConfirmedSince(@Param("status") BookingStatus status, @Param("from") LocalDateTime from);
 
+    /** Paid bookings confirmed in [from, to) - used by the sales reports. */
+    @Query("select b from Booking b where b.status = :status and b.confirmedAt >= :from and b.confirmedAt < :to")
+    List<Booking> findByStatusConfirmedBetween(@Param("status") BookingStatus status,
+                                               @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /** Paid, not checked in, no reminder sent yet, show date in [fromDate, toDate]. Times are filtered in Java. */
+    @Query("""
+            select b from Booking b join b.showTime st
+            where b.status = :status and b.reminderEmailedAt is null and b.checkedInAt is null
+              and st.showDate between :fromDate and :toDate
+            """)
+    List<Booking> findReminderCandidates(@Param("status") BookingStatus status,
+                                         @Param("fromDate") java.time.LocalDate fromDate,
+                                         @Param("toDate") java.time.LocalDate toDate);
+
     List<Booking> findByStatus(BookingStatus status);
 
     boolean existsByShowTimeIdIn(Collection<Long> showTimeIds);

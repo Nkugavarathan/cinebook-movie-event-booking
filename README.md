@@ -157,8 +157,8 @@ MAIL_PASSWORD=xxxxxxxxxxxxxxxx    # Gmail App Password, not your normal password
 REFUND_CUTOFF_HOURS=24            # customers can self-cancel until this many hours before the show
 REFUND_FEE_PERCENT=0              # cancellation fee kept from customer refunds (0 = full refund)
 GEMINI_API_KEY=                   # booking assistant, from https://aistudio.google.com/apikey (widget hidden if empty)
-GEMINI_MODEL=gemini-2.5-flash     # optional; chat model
-GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts   # optional; voice model
+GEMINI_MODEL=gemini-3-flash-preview   # optional; chat model (falls back to other current models automatically)
+GEMINI_TTS_MODEL=gemini-3.1-flash-tts-preview   # optional; voice model
 GEMINI_TTS_VOICE=Aoede            # optional; default voice
 ASSISTANT_KB_FILE=                # optional; path to an edited copy of the assistant knowledge base
 ```

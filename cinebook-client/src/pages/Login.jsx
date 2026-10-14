@@ -43,7 +43,10 @@ export default function Login() {
             value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">Password</span>
+          <span className="mb-1.5 flex items-center justify-between text-sm font-medium">
+            Password
+            <Link to="/forgot-password" className="text-xs font-semibold text-brand hover:underline">Forgot password?</Link>
+          </span>
           <PasswordInput required autoComplete="current-password" className="input" placeholder="••••••••"
             value={data.password} onChange={(e) => setData({ ...data, password: e.target.value })} />
         </label>

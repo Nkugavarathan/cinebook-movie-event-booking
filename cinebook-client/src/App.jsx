@@ -16,6 +16,8 @@ import MyBookings from "./pages/MyBookings"
 import BookingDetail from "./pages/BookingDetail"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
+import ForgotPassword from "./pages/ForgotPassword"
+import ResetPassword from "./pages/ResetPassword"
 import NotFound from "./pages/NotFound"
 import Assistant from "./assistant/Assistant"
 
@@ -42,6 +44,8 @@ export default function App() {
           <Route path="/book/:showtimeId" element={<SeatSelection />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout/:bookingId" element={<Checkout />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />

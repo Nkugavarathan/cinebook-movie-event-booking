@@ -95,6 +95,9 @@ public class TicketPdfService {
             field(grid, st.isEvent() ? "HALL" : "SCREEN",
                     st.getScreen().getScreenName() + (st.getScreen().getFormat() != null ? " · " + st.getScreen().getFormat() : ""));
             fieldWide(grid, "SEATS (" + b.getSeats().size() + ")", b.getSeatLabels());
+            if (!b.getSnacks().isEmpty()) {
+                fieldWide(grid, "SNACKS - COLLECT AT THE COUNTER", snackSummary(b));
+            }
             if (b.getContactName() != null) {
                 fieldWide(grid, "BOOKED FOR", b.getContactName() + (b.getContactPhone() != null ? " · " + b.getContactPhone() : ""));
             }
@@ -222,6 +225,13 @@ public class TicketPdfService {
             log.debug("Poster not embedded in PDF ({}): {}", url, e.getMessage());
             return null;
         }
+    }
+
+    /** "2 x Large popcorn, 1 x Cola" */
+    public static String snackSummary(Booking b) {
+        return b.getSnacks().stream()
+                .map(s -> s.getQuantity() + " x " + s.getName())
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 
     public static String money(Booking b) {

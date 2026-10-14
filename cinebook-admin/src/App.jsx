@@ -19,6 +19,8 @@ import UsersList from "./pages/admin/users/UsersList"
 import PromosList from "./pages/admin/promos/PromosList"
 import CheckIn from "./pages/admin/checkin/CheckIn"
 import ReviewsList from "./pages/admin/reviews/ReviewsList"
+import SnacksList from "./pages/admin/snacks/SnacksList"
+import Reports from "./pages/admin/reports/Reports"
 import { useAuth } from "./context/AuthContext"
 import { homeFor } from "./ProtectedAdminRoute"
 
@@ -48,6 +50,8 @@ export default function App() {
             <Route path="/admin/promos" element={<PromosList />} />
             <Route path="/admin/checkin" element={<CheckIn />} />
             <Route path="/admin/reviews" element={<ReviewsList />} />
+            <Route path="/admin/snacks" element={<SnacksList />} />
+            <Route path="/admin/reports" element={<Reports />} />
           </Route>
         </Route>
         <Route path="*" element={<Home />} />

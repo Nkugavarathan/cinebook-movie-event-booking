@@ -95,6 +95,9 @@ export default function BookingDetail() {
           <Field label="Cinema" value={st.theaterName} />
           <Field label="Screen" value={`${st.screenName}${st.format ? " · " + st.format : ""}`} />
           <Field label="Seats" value={b.seatLabels} wide />
+          {b.snacks?.length > 0 && (
+            <Field label="Snacks (collect at the counter)" value={b.snacks.map((s) => `${s.quantity} × ${s.name}`).join(", ")} wide />
+          )}
           {b.contactName && (
             <Field label="Booked for" value={[b.contactName, b.contactPhone].filter(Boolean).join(" · ")} wide />
           )}

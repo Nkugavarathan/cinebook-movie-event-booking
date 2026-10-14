@@ -51,14 +51,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/error").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/signup",
+                                "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/reset-password/validate").permitAll()
                         // Stripe calls this; authenticity is checked with the signing secret instead.
                         .requestMatchers("/api/payments/webhook", "/api/payments/config").permitAll()
                         // Booking assistant: open to visitors; holding seats still requires sign-in (checked in the tools).
                         .requestMatchers("/api/assistant/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/movies/**", "/api/theaters/**", "/api/showtimes/**",
-                                "/api/events/**").permitAll()
+                                "/api/events/**", "/api/snacks").permitAll()
                         .requestMatchers("/api/admin/checkin/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

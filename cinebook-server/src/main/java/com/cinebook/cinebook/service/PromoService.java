@@ -127,7 +127,7 @@ public class PromoService {
         b.setSubtotalAmount(subtotal);
         b.setPromoCode(code);
         b.setDiscountAmount(code == null ? null : discount);
-        b.setTotalAmount(subtotal.subtract(code == null ? BigDecimal.ZERO : discount));
+        b.recalculateTotal();
         // A Stripe session made for the old total must not be paid.
         if (b.getStripeSessionId() != null) {
             stripe.expireSessionQuietly(b.getStripeSessionId());

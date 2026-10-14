@@ -1,39 +1,54 @@
 import { useEffect, useRef } from "react"
+import { Bot } from "lucide-react"
 
 /**
- * The assistant's presence: a soft gradient orb. It breathes when idle, swirls while thinking,
- * and moves with the voice level while listening or speaking.
+ * The assistant's avatar: a CineBook-branded tile with a robot mark.
+ * idle: still; thinking: soft pulsing ring; listening: ring follows your voice;
+ * speaking: the mark becomes equalizer bars that move with the reply.
  * mode: idle | listening | thinking | speaking
  */
-export function Orb({ size = 40, mode = "idle", levelRef }) {
-  const core = useRef(null)
-  const halo = useRef(null)
+export function AssistantAvatar({ size = 40, mode = "idle", levelRef }) {
+  const ring = useRef(null)
+  const bars = useRef([])
 
   useEffect(() => {
     let raf
     let smooth = 0
+    let t = 0
     const tick = () => {
+      t += 1
       const target = levelRef?.current || 0
-      smooth += (target - smooth) * 0.22
-      const reactive = mode === "listening" || mode === "speaking"
-      const s = reactive ? 1 + smooth * 0.32 : 1
-      if (core.current) core.current.style.transform = `scale(${s.toFixed(3)})`
-      if (halo.current) {
-        halo.current.style.transform = `scale(${(reactive ? 1.08 + smooth * 0.55 : 1).toFixed(3)})`
-        halo.current.style.opacity = reactive ? String(0.35 + smooth * 0.6) : ""
+      smooth += (target - smooth) * 0.25
+      if (ring.current) {
+        const live = mode === "listening" || mode === "speaking"
+        ring.current.style.transform = live ? `scale(${(1.04 + smooth * 0.22).toFixed(3)})` : ""
+        ring.current.style.opacity = live ? String(0.35 + smooth * 0.65) : ""
       }
+      bars.current.forEach((el, i) => {
+        if (!el) return
+        const wobble = 0.55 + 0.45 * Math.sin(t / 5 + i * 1.7)
+        el.style.transform = `scaleY(${Math.max(0.18, Math.min(1, smooth * 1.6 * wobble + 0.15)).toFixed(3)})`
+      })
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [mode, levelRef])
 
+  const icon = Math.round(size * 0.5)
   return (
-    <span className={`orb orb-${mode} relative inline-grid shrink-0 place-items-center`} style={{ width: size, height: size }} aria-hidden="true">
-      <span ref={halo} className="orb-halo absolute inset-0 rounded-full" />
-      <span ref={core} className="orb-core absolute inset-0 overflow-hidden rounded-full">
-        <span className="orb-swirl absolute -inset-1/4" />
-        <span className="orb-gloss absolute inset-0 rounded-full" />
+    <span className={`assist-avatar assist-avatar-${mode} relative inline-grid shrink-0 place-items-center`} style={{ width: size, height: size }} aria-hidden="true">
+      <span ref={ring} className="assist-avatar-ring absolute -inset-[3px] rounded-full border-2 border-brand" />
+      <span className="relative grid h-full w-full place-items-center rounded-full bg-linear-to-br from-brand to-amber-500 text-white shadow-lg shadow-brand/25">
+        {mode === "speaking" ? (
+          <span className="flex items-center gap-[12%]" style={{ height: icon, width: icon }}>
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} ref={(el) => (bars.current[i] = el)} className="h-full flex-1 origin-center rounded-full bg-white" />
+            ))}
+          </span>
+        ) : (
+          <Bot size={icon} strokeWidth={2} />
+        )}
       </span>
     </span>
   )

@@ -6,6 +6,7 @@ import api, { errorMessage } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import BookingSummary from "../components/BookingSummary"
 import PromoBox from "../components/PromoBox"
+import SnackPicker from "../components/SnackPicker"
 import Countdown from "../components/Countdown"
 import { CheckoutSkeleton } from "../components/Skeletons"
 import { EmptyState, Spinner } from "../components/ui"
@@ -137,6 +138,7 @@ export default function Checkout() {
           <div className="card p-6">
             <BookingSummary booking={booking} />
             <PromoBox booking={booking} onChange={setBooking} />
+            <SnackPicker booking={booking} onChange={setBooking} />
           </div>
 
           <div className="space-y-4">

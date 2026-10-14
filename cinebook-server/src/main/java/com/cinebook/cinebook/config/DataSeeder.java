@@ -33,6 +33,7 @@ public class DataSeeder implements ApplicationRunner {
     private final ShowTimeRepository showTimeRepo;
     private final EventRepository eventRepo;
     private final PromoCodeRepository promoRepo;
+    private final SnackRepository snackRepo;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.email}")
@@ -69,6 +70,26 @@ public class DataSeeder implements ApplicationRunner {
         if (seedDemo && promoRepo.count() == 0) {
             seedPromos();
         }
+        if (seedDemo && snackRepo.count() == 0) {
+            seedSnacks();
+        }
+    }
+
+    private void seedSnacks() {
+        boolean lkr = "lkr".equalsIgnoreCase(currency);
+        snackRepo.saveAll(List.of(
+                snack("Regular popcorn", "Popcorn", "Freshly popped, lightly salted", lkr ? "800" : "4"),
+                snack("Large caramel popcorn", "Popcorn", "Sweet caramel coating, sharing size", lkr ? "1200" : "6"),
+                snack("Cola", "Drinks", "500 ml, chilled", lkr ? "450" : "2.50"),
+                snack("Mineral water", "Drinks", "500 ml bottle", lkr ? "200" : "1.50"),
+                snack("Nachos with cheese", "Snacks", "Warm tortilla chips with cheese dip", lkr ? "900" : "5"),
+                snack("Movie combo for two", "Combos", "Large popcorn + 2 colas", lkr ? "1800" : "9")));
+        log.info("Seeded demo snacks");
+    }
+
+    private static Snack snack(String name, String category, String description, String price) {
+        return Snack.builder().name(name).category(category).description(description)
+                .price(new BigDecimal(price)).active(true).build();
     }
 
     private void seedCatalogue() {

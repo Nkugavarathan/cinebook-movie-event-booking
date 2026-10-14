@@ -41,16 +41,14 @@ public class AssistantService {
     private final KnowledgeBase knowledgeBase;
     private final ObjectMapper json;
 
-    @Value("${gemini.model:${GEMINI_MODEL:gemini-2.5-flash}}")
-    private String chatModel;
-
     @Value("${app.booking.hold-minutes}")
     private int holdMinutes;
 
     @Value("${app.booking.max-seats}")
     private int maxSeats;
 
-    public record Message(String role, String text) {
+    /** context: the hidden notes returned with an earlier reply, sent back by the browser. */
+    public record Message(String role, String text, String context) {
     }
 
     public record Request(List<Message> messages, String path, String language) {
@@ -59,7 +57,7 @@ public class AssistantService {
     public record Card(String type, JsonNode items) {
     }
 
-    public record Reply(String reply, List<Card> cards, List<JsonNode> actions, boolean signedIn) {
+    public record Reply(String reply, List<Card> cards, List<JsonNode> actions, boolean signedIn, String context) {
     }
 
     public Reply chat(Request req) {
@@ -67,14 +65,15 @@ public class AssistantService {
         ObjectNode body = json.createObjectNode();
         body.putObject("systemInstruction").putArray("parts").addObject().put("text", systemPrompt(req));
         ArrayNode contents = body.putArray("contents");
-        history(req.messages()).forEach(m -> contents.addObject()
-                .put("role", "assistant".equals(m.role()) ? "model" : "user")
-                .putArray("parts").addObject().put("text", m.text()));
+        history(req.messages()).forEach(m -> {
+            boolean model = "assistant".equals(m.role());
+            String text = model && m.context() != null && !m.context().isBlank()
+                    ? m.text() + "\n\n[Internal notes from this turn - ids for your tools, never say them aloud: " + m.context() + "]"
+                    : m.text();
+            contents.addObject().put("role", model ? "model" : "user").putArray("parts").addObject().put("text", text);
+        });
         body.putArray("tools").addObject().set("functionDeclarations", tools.declarations());
-        ObjectNode gen = body.putObject("generationConfig").put("temperature", 0.4).put("maxOutputTokens", 1024);
-        if (chatModel.startsWith("gemini-2.5-flash")) {
-            gen.putObject("thinkingConfig").put("thinkingBudget", 0); // fastest replies for voice
-        }
+        body.putObject("generationConfig").put("temperature", 0.4).put("maxOutputTokens", 2048);
 
         String text = "";
         for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -117,7 +116,9 @@ public class AssistantService {
                     : "Done.";
         }
         List<Card> cards = turn.cards.entrySet().stream().map(e -> new Card(e.getKey(), e.getValue())).toList();
-        return new Reply(clean(text), cards, turn.actions, currentUser.find().isPresent());
+        String context = turn.notes.isEmpty() ? null : String.join(" | ", turn.notes.values());
+        if (context != null && context.length() > 2500) context = context.substring(0, 2500);
+        return new Reply(clean(text), cards, turn.actions, currentUser.find().isPresent(), context);
     }
 
     private String systemPrompt(Request req) {
@@ -163,6 +164,9 @@ public class AssistantService {
                 - If the customer wants to pick seats themselves, open the seat map (open_page seat_map).
                 - Never invent showtimes, prices or availability: only state what tools returned.
                 - Max %d seats per booking.
+                - Earlier replies may end with [Internal notes ...] listing the exact ids you used. When the customer \
+                refers back ("that one", "yes, hold them"), use those ids - especially the quoted showtimeId and seats - \
+                instead of guessing. Never mention the notes.
 
                 ANSWERING QUESTIONS
                 - For questions about accounts, payment, tickets, refunds, promo codes, check-in or how the assistant works,                 answer from the KNOWLEDGE BASE below. For anything about this customer's own bookings, call get_my_bookings.
@@ -218,7 +222,8 @@ public class AssistantService {
     private List<Message> history(List<Message> all) {
         List<Message> msgs = all == null ? List.of() : all.stream()
                 .filter(m -> m != null && m.text() != null && !m.text().isBlank())
-                .map(m -> new Message(m.role(), m.text().length() > 1500 ? m.text().substring(0, 1500) : m.text()))
+                .map(m -> new Message(m.role(), m.text().length() > 1500 ? m.text().substring(0, 1500) : m.text(),
+                        m.context() == null || m.context().length() <= 2500 ? m.context() : m.context().substring(0, 2500)))
                 .toList();
         if (msgs.size() > MAX_HISTORY) msgs = msgs.subList(msgs.size() - MAX_HISTORY, msgs.size());
         int first = 0;

@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { BadgePercent, Building2, MessageSquareText, ScanLine, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
+import { BadgePercent, Building2, ChartColumn, MessageSquareText, Popcorn, ScanLine, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
 
 const NAV = [
   ["/admin/dashboard", "Dashboard", LayoutDashboard],
+  ["/admin/reports", "Reports", ChartColumn],
   ["/admin/movies", "Movies", Film],
   ["/admin/events", "Events", PartyPopper],
   ["/admin/theaters", "Theaters & venues", Building2],
@@ -12,6 +13,7 @@ const NAV = [
   ["/admin/checkin", "Check-in", ScanLine],
   ["/admin/bookings", "Bookings", Ticket],
   ["/admin/promos", "Promo codes", BadgePercent],
+  ["/admin/snacks", "Snacks & combos", Popcorn],
   ["/admin/reviews", "Reviews", MessageSquareText],
   ["/admin/users", "Users", Users],
 ]

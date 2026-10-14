@@ -3,8 +3,10 @@ package com.cinebook.cinebook.controller;
 import com.cinebook.cinebook.dto.BookingRequestDTO;
 import com.cinebook.cinebook.dto.BookingResponseDTO;
 import com.cinebook.cinebook.dto.ApplyPromoRequest;
+import com.cinebook.cinebook.dto.UpdateSnacksRequest;
 import com.cinebook.cinebook.service.BookingService;
 import com.cinebook.cinebook.service.PromoService;
+import com.cinebook.cinebook.service.SnackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final PromoService promoService;
+    private final SnackService snackService;
 
     /** Holds the selected seats; pay for them with POST /api/payments/checkout/{id}. */
     @PostMapping
@@ -47,6 +50,12 @@ public class BookingController {
     @DeleteMapping("/{id}/promo")
     public BookingResponseDTO removePromo(@PathVariable Long id) {
         return promoService.remove(id);
+    }
+
+    /** Replace the snacks on a held booking; the server prices them and updates the total. */
+    @PutMapping("/{id}/snacks")
+    public BookingResponseDTO updateSnacks(@PathVariable Long id, @Valid @RequestBody UpdateSnacksRequest request) {
+        return snackService.updateBookingSnacks(id, request);
     }
 
     /** Cancel a paid ticket and get the money back (allowed until the refund deadline). */

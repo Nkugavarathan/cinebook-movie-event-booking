@@ -10,8 +10,9 @@ public record BookingResponseDTO(
         Long id,
         String reference,
         BookingStatus status,
-        /** What the customer pays (after any promo discount). */
+        /** What the customer pays: tickets - promo discount + snacks. */
         BigDecimal totalAmount,
+        /** Tickets only, before the promo discount. */
         BigDecimal subtotalAmount,
         BigDecimal discountAmount,
         String promoCode,
@@ -40,5 +41,9 @@ public record BookingResponseDTO(
         LocalDateTime ticketEmailedAt,
         LocalDateTime refundEmailedAt,
         LocalDateTime checkedInAt,
-        String checkedInBy) {
+        String checkedInBy,
+        List<BookingSnackDTO> snacks,
+        /** Sum of the snack lines, or null when there are none. */
+        BigDecimal snacksAmount,
+        LocalDateTime reminderEmailedAt) {
 }

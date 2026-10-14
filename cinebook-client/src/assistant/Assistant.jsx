@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowRight, ArrowUp, Check, Download, Ellipsis, LogIn, Maximize2, Mic, Minimize2, Square, Trash2, Volume2, VolumeX, X } from "lucide-react"
+import { ArrowRight, ArrowUp, Check, Clapperboard, Download, Ellipsis, LogIn, Maximize2, Mic, Minimize2, Music, Square, Ticket, TicketCheck, Trash2, Volume2, VolumeX, X } from "lucide-react"
 import api, { errorMessage } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { Orb, Thinking, Waveform } from "./Visuals"
+import { AssistantAvatar, Thinking, Waveform } from "./Visuals"
 import Cards from "./Cards"
 import { canListen, unlockAudio, useListener, useSpeaker } from "./voice"
 import { downloadTranscript } from "./transcript"
@@ -19,11 +19,12 @@ const LANGUAGES = [
 ]
 
 const SUGGESTIONS = [
-  "What's showing tonight?",
-  "Book 2 tickets for the next show of Dune",
-  "Any concerts this weekend?",
-  "Show my upcoming tickets",
+  { text: "What's showing tonight?", icon: Clapperboard },
+  { text: "Book 2 tickets for the next show of Dune", icon: Ticket },
+  { text: "Any concerts this weekend?", icon: Music },
+  { text: "Show my upcoming tickets", icon: TicketCheck },
 ]
+const HINT_KEY = "cinebook_assistant_hint_seen"
 
 function load(key, fallback, store = localStorage) {
   try {
@@ -82,6 +83,22 @@ export default function Assistant() {
     api.get("/assistant/status").then((r) => setConfig(r.data)).catch(() => setConfig({ enabled: false }))
   }, [])
 
+  const [hint, setHint] = useState(false)
+  const dismissHint = useCallback(() => {
+    setHint(false)
+    save(HINT_KEY, true, sessionStorage)
+  }, [])
+  useEffect(() => {
+    if (!config?.enabled || open || load(HINT_KEY, false, sessionStorage) || messagesRef.current.length) return
+    const show = setTimeout(() => setHint(true), 6000)
+    return () => clearTimeout(show)
+  }, [config?.enabled, open])
+  useEffect(() => {
+    if (!hint) return
+    const hide = setTimeout(() => setHint(false), 18000)
+    return () => clearTimeout(hide)
+  }, [hint])
+
   const speaker = useSpeaker()
   const voice = prefs.voice || config?.defaultVoice
 
@@ -115,12 +132,12 @@ export default function Assistant() {
     setBusy(true)
     try {
       const res = await api.post("/assistant/chat", {
-        messages: history.filter((m) => !m.error).map((m) => ({ role: m.role, text: m.text })),
+        messages: history.filter((m) => !m.error).map((m) => ({ role: m.role, text: m.text, context: m.context })),
         path: window.location.pathname,
         language: prefs.lang,
       }, { timeout: 90000 })
       const r = res.data
-      const reply = { id: uid(), role: "assistant", text: r.reply, cards: r.cards, actions: r.actions, at: Date.now() }
+      const reply = { id: uid(), role: "assistant", text: r.reply, cards: r.cards, actions: r.actions, context: r.context, at: Date.now() }
       setMessages((m) => [...m, reply])
       setBusy(false)
       runActions(r.actions)
@@ -167,7 +184,10 @@ export default function Assistant() {
 
   useLayoutEffect(() => {
     const el = scroller.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    if (!el) return
+    // the welcome screen starts at the top; a conversation follows its latest message
+    if (messages.length) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    else el.scrollTo({ top: 0 })
   }, [messages, busy, open, listener.interim])
 
   useEffect(() => {
@@ -242,16 +262,46 @@ export default function Assistant() {
   /* ------------------------------------------------------------ launcher */
 
   if (!open) {
+    const openPanel = () => { unlockAudio(); dismissHint(); setOpen(true) }
     return (
-      <button onClick={() => { unlockAudio(); setOpen(true) }}
-        className={`assist-launcher no-print fixed right-4 z-[90] flex items-center gap-2.5 rounded-full border border-line bg-surface/90 py-1.5 pl-1.5 pr-4 text-left shadow-[0_12px_40px_-12px_rgb(0_0_0/0.45)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-faint sm:right-6 ${lifted ? "bottom-36 sm:bottom-28" : "bottom-4 sm:bottom-6"}`}
-        aria-label="Open the CineBook booking assistant">
-        <Orb size={34} mode={mode} levelRef={levelRef} />
-        <span className="leading-tight">
-          <span className="block text-sm font-semibold">{mode === "idle" ? "Ask CineBook" : statusLine}</span>
-          <span className="block text-[11px] text-faint">{mode === "idle" ? "Book by voice or chat" : "Tap to open"}</span>
-        </span>
-      </button>
+      <div className={`no-print fixed right-4 z-[90] flex flex-col items-end gap-3 sm:right-6 ${lifted ? "bottom-36 sm:bottom-28" : "bottom-4 sm:bottom-6"}`}>
+        {hint && mode === "idle" && (
+          <div role="status" className="assist-hint relative w-[17.5rem] rounded-2xl border border-line bg-surface p-4 pr-9 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.55)]">
+            <button onClick={dismissHint} aria-label="Dismiss" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg text-faint transition hover:bg-surface-2 hover:text-ink">
+              <X size={14} />
+            </button>
+            <p className="font-display text-[15px] font-semibold">{greeting(user?.name)}!</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">Looking for a show? I can find it, pick great seats and book them for you. Just type or talk.</p>
+            <div className="mt-3 flex gap-2">
+              <button onClick={openPanel} className="btn-primary rounded-full px-3.5 py-1.5 text-xs">Start chatting</button>
+              <button onClick={() => { openPanel(); setTimeout(() => listenerRef.current?.start(), 350) }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-xs font-semibold transition hover:border-faint hover:bg-surface-2">
+                <Mic size={13} /> Talk
+              </button>
+            </div>
+            {/* pointer towards the launcher */}
+            <span className="absolute -bottom-1.5 right-10 h-3 w-3 rotate-45 border-b border-r border-line bg-surface" />
+          </div>
+        )}
+        <button onClick={openPanel}
+          className="assist-launcher group flex items-center gap-2.5 rounded-full border border-line bg-surface/90 py-1.5 pl-1.5 pr-4 text-left shadow-[0_12px_40px_-12px_rgb(0_0_0/0.45)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_44px_-14px_rgb(244_63_94/0.45)] active:scale-[.97]"
+          aria-label="Open the CineBook booking assistant">
+          <span className="relative transition duration-300 group-hover:-rotate-[8deg] group-hover:scale-110">
+            <AssistantAvatar size={34} mode={mode} levelRef={levelRef} />
+            {mode === "idle" && (
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-surface bg-ok" />
+              </span>
+            )}
+          </span>
+          <span className="leading-tight cursor-pointer">
+            <span className="block text-sm font-semibold">{mode === "idle" ? "Ask CineBook" : statusLine}</span>
+            <span className="block text-[11px] text-faint">{mode === "idle" ? "Book by voice or chat" : "Tap to open"}</span>
+          </span>
+          <ArrowRight size={15} className="-ml-1 w-0 -translate-x-1 text-brand opacity-0 transition-all duration-300 group-hover:ml-0 group-hover:w-[15px] group-hover:translate-x-0 group-hover:opacity-100" />
+        </button>
+      </div>
     )
   }
 
@@ -264,7 +314,7 @@ export default function Assistant() {
 
       {/* header */}
       <header className="relative flex items-center gap-3 border-b border-line px-4 py-3">
-        <Orb size={36} mode={mode} levelRef={levelRef} />
+        <AssistantAvatar size={36} mode={mode} levelRef={levelRef} />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-[15px] font-semibold leading-tight">CineBook Concierge</h2>
           <p className="flex items-center gap-1.5 text-xs text-muted">
@@ -405,7 +455,7 @@ export default function Assistant() {
             <textarea ref={input} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft) } }}
               placeholder={busy ? "Working on it..." : "Message CineBook"}
-              className="max-h-36 min-h-[2.25rem] flex-1 resize-none bg-transparent py-2 text-[14px] text-ink outline-none placeholder:text-faint" />
+              className="max-h-36 min-h-[2.25rem] flex-1 resize-none bg-transparent py-2 text-base text-ink outline-none placeholder:text-faint" />
             {speaker.speaking && (
               <button type="button" onClick={speaker.stop} aria-label="Stop speaking" title="Stop speaking"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted transition hover:bg-surface hover:text-ink">
@@ -433,25 +483,28 @@ export default function Assistant() {
 function Welcome({ name, mode, levelRef, onTalk, onAsk }) {
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center px-2 pb-6 pt-4 text-center">
-        <Orb size={88} mode={mode} levelRef={levelRef} />
-        <h3 className="mt-6 font-display text-2xl font-semibold tracking-tight">{greeting(name)}</h3>
+      <div className="flex flex-1 flex-col items-center justify-center px-2 pb-4 pt-1 text-center">
+        <span className={mode === "idle" ? "assist-float" : ""}><AssistantAvatar size={64} mode={mode} levelRef={levelRef} /></span>
+        <h3 className="mt-4 font-display text-2xl font-semibold tracking-tight">{greeting(name)}</h3>
         <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted">
           Tell me what you'd like to watch. I'll find the show, pick great seats and get your tickets ready.
         </p>
         {onTalk && (
-          <button onClick={onTalk} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-bg shadow-lg transition hover:opacity-90 active:scale-[.98]">
+          <button onClick={onTalk} className="cursor-pointer btn-primary mt-5 rounded-full px-6 py-2.5 text-sm">
             <Mic size={16} /> Talk to book
           </button>
         )}
       </div>
       <div className="space-y-1.5">
         <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-faint">Try asking</p>
-        {SUGGESTIONS.map((s) => (
-          <button key={s} onClick={() => onAsk(s)}
-            className="group flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-left text-sm transition hover:border-faint hover:bg-surface-2">
-            {s}
-            <ArrowRight size={15} className="shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-ink" />
+        {SUGGESTIONS.map(({ text, icon: Icon }, i) => (
+          <button key={text} onClick={() => onAsk(text)} style={{ animationDelay: `${120 + i * 70}ms` }}
+            className="assist-rise group flex w-full items-center gap-3 rounded-xl border border-line bg-surface px-2.5 py-1.5 text-left text-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-surface-2 hover:shadow-[0_10px_24px_-16px_rgb(0_0_0/0.5)] active:translate-y-0">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand transition group-hover:scale-110">
+              <Icon size={15} />
+            </span>
+            <span className="flex-1">{text}</span>
+            <ArrowRight size={15} className="shrink-0 -translate-x-1 text-faint opacity-0 transition group-hover:translate-x-0 group-hover:text-brand group-hover:opacity-100" />
           </button>
         ))}
       </div>

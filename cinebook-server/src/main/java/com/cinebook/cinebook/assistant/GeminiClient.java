@@ -21,7 +21,11 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Thin REST client for the Gemini API. The key stays on the server; the browser only talks to /api/assistant.
@@ -30,10 +34,16 @@ import java.util.Set;
 @Component
 public class GeminiClient {
 
-    /** Used when the configured model is unknown to the API (e.g. a retired preview name). */
-    private static final String FALLBACK_CHAT_MODEL = "gemini-2.5-flash";
-    private static final String FALLBACK_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+    /**
+     * Tried in order after the configured model when a model is retired, unavailable for this key or hangs.
+     * Google retires model names regularly, so the first one that answers is remembered.
+     */
+    private static final List<String> CHAT_MODELS = List.of(
+            "gemini-3-flash-preview", "gemini-flash-latest", "gemini-3.5-flash", "gemini-2.5-flash");
+    private static final List<String> TTS_MODELS = List.of(
+            "gemini-3.1-flash-tts-preview", "gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts");
     private static final int TTS_SAMPLE_RATE = 24000;
+    private static final Pattern RATE = Pattern.compile("rate=(\\d+)");
 
     private final ObjectMapper json;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -44,11 +54,14 @@ public class GeminiClient {
     @Value("${gemini.api-key:${GEMINI_API_KEY:}}")
     private String apiKey;
 
-    @Value("${gemini.model:${GEMINI_MODEL:gemini-2.5-flash}}")
+    @Value("${gemini.model:${GEMINI_MODEL:gemini-3-flash-preview}}")
     private String chatModel;
 
-    @Value("${gemini.tts-model:${GEMINI_TTS_MODEL:gemini-2.5-flash-preview-tts}}")
+    @Value("${gemini.tts-model:${GEMINI_TTS_MODEL:gemini-3.1-flash-tts-preview}}")
     private String ttsModel;
+
+    /** The model that last answered, per kind, so retired ones are not retried on every message. */
+    private final Map<String, String> working = new ConcurrentHashMap<>();
 
     public GeminiClient(ObjectMapper json) {
         this.json = json;
@@ -64,7 +77,7 @@ public class GeminiClient {
 
     /** One generateContent call on the chat model; returns the raw response. */
     public JsonNode generate(ObjectNode body) {
-        return callWithFallback(chatModel, FALLBACK_CHAT_MODEL, body, Duration.ofSeconds(45));
+        return callWithFallback("chat", chatModel, CHAT_MODELS, body, Duration.ofSeconds(40));
     }
 
     /** Text to natural speech; returns a WAV file. */
@@ -76,14 +89,21 @@ public class GeminiClient {
         gen.putArray("responseModalities").add("AUDIO");
         gen.putObject("speechConfig").putObject("voiceConfig").putObject("prebuiltVoiceConfig").put("voiceName", voice);
 
-        JsonNode res = callWithFallback(ttsModel, FALLBACK_TTS_MODEL, body, Duration.ofSeconds(60));
+        JsonNode res = callWithFallback("tts", ttsModel, TTS_MODELS, body, Duration.ofSeconds(45));
         ByteArrayOutputStream pcm = new ByteArrayOutputStream();
+        int rate = TTS_SAMPLE_RATE;
         for (JsonNode part : res.path("candidates").path(0).path("content").path("parts")) {
             String data = part.path("inlineData").path("data").asText(null);
-            if (data != null) pcm.writeBytes(Base64.getDecoder().decode(data));
+            if (data == null) continue;
+            byte[] bytes = Base64.getDecoder().decode(data);
+            String mime = part.path("inlineData").path("mimeType").asText("").toLowerCase();
+            if (mime.contains("wav")) return bytes; // already a playable file
+            Matcher m = RATE.matcher(mime);
+            if (m.find()) rate = Integer.parseInt(m.group(1));
+            pcm.writeBytes(bytes);
         }
         if (pcm.size() == 0) throw new ApiException(HttpStatus.BAD_GATEWAY, "The voice service returned no audio");
-        return wav(pcm.toByteArray(), TTS_SAMPLE_RATE);
+        return wav(pcm.toByteArray(), rate);
     }
 
     /** Short audio clip to text (for browsers without built-in speech recognition). */
@@ -94,7 +114,7 @@ public class GeminiClient {
                 + "cinema and event ticket booking assistant. Return only the transcript, no quotes or notes. "
                 + "If nothing intelligible is said, return an empty string.");
         parts.addObject().putObject("inlineData").put("mimeType", mimeType).put("data", Base64.getEncoder().encodeToString(audio));
-        JsonNode res = callWithFallback(chatModel, FALLBACK_CHAT_MODEL, body, Duration.ofSeconds(45));
+        JsonNode res = callWithFallback("chat", chatModel, CHAT_MODELS, body, Duration.ofSeconds(40));
         StringBuilder out = new StringBuilder();
         for (JsonNode part : res.path("candidates").path(0).path("content").path("parts")) {
             if (!part.path("thought").asBoolean(false)) out.append(part.path("text").asText(""));
@@ -102,21 +122,40 @@ public class GeminiClient {
         return out.toString().trim();
     }
 
-    private JsonNode callWithFallback(String model, String fallback, ObjectNode body, Duration timeout) {
+    private JsonNode callWithFallback(String kind, String configured, List<String> fallbacks, ObjectNode body, Duration timeout) {
         if (!enabled()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "The assistant is not configured yet");
         }
-        Set<String> models = new LinkedHashSet<>(List.of(model, fallback));
-        ApiException last = null;
+        Set<String> models = new LinkedHashSet<>();
+        if (working.containsKey(kind)) models.add(working.get(kind));
+        models.add(configured);
+        models.addAll(fallbacks);
         for (String m : models) {
             try {
-                return call(m, body, timeout);
+                JsonNode res = call(m, withModelSettings(m, body), timeout);
+                if (!m.equals(working.put(kind, m))) log.info("Gemini {} model in use: {}", kind, m);
+                return res;
             } catch (ModelNotFound e) {
-                log.warn("Gemini model {} is not available, trying the next one", m);
-                last = new ApiException(HttpStatus.BAD_GATEWAY, "The assistant model is not available");
+                log.warn("Gemini model {} is not available ({}), trying the next one", m, e.getMessage());
+                working.remove(kind, m);
             }
         }
-        throw last;
+        log.error("No Gemini {} model answered. Set GEMINI_{}MODEL in .env to one listed at "
+                + "https://ai.google.dev/gemini-api/docs/models", kind, kind.equals("tts") ? "TTS_" : "");
+        throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Sorry, the assistant is unavailable right now. You can still book from the Movies and Events pages.");
+    }
+
+    /** Per-model request tweaks for quick spoken replies: 2.5 Flash without thinking, Gemini 3 with low thinking. */
+    private ObjectNode withModelSettings(String model, ObjectNode body) {
+        if (model.contains("tts") || !body.has("tools")) return body;
+        ObjectNode thinking;
+        if (model.startsWith("gemini-2.5-flash")) thinking = json.createObjectNode().put("thinkingBudget", 0);
+        else if (model.startsWith("gemini-3")) thinking = json.createObjectNode().put("thinkingLevel", "low");
+        else return body;
+        ObjectNode copy = body.deepCopy();
+        copy.with("generationConfig").set("thinkingConfig", thinking);
+        return copy;
     }
 
     private JsonNode call(String model, ObjectNode body, Duration timeout) {
@@ -128,10 +167,14 @@ public class GeminiClient {
                     .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)))
                     .build();
             HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
-            if (res.statusCode() == 404) throw new ModelNotFound();
-            if (res.statusCode() == 429) {
-                throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "The assistant is busy right now. Please try again in a moment.");
+            if (res.statusCode() == 404) throw new ModelNotFound("404");
+            if (res.statusCode() == 500 || res.statusCode() == 503) throw new ModelNotFound(res.statusCode() + " overloaded or unavailable");
+            if (res.statusCode() == 400 && res.body() != null
+                    && res.body().matches("(?s).*(not supported|no longer available|is not found|deprecated).*")) {
+                throw new ModelNotFound("400 " + abbreviate(res.body()));
             }
+            // each model has its own per-minute quota, so a rate-limited model hands over to the next one
+            if (res.statusCode() == 429) throw new ModelNotFound("429 rate limited");
             if (res.statusCode() >= 400) {
                 String err = res.body() == null ? "" : res.body();
                 if (err.contains("CONSUMER_SUSPENDED")) {
@@ -149,6 +192,8 @@ public class GeminiClient {
             return json.readTree(res.body());
         } catch (ApiException | ModelNotFound e) {
             throw e;
+        } catch (java.net.http.HttpTimeoutException e) {
+            throw new ModelNotFound("no answer within " + timeout.toSeconds() + "s");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "The assistant request was interrupted");
@@ -173,5 +218,8 @@ public class GeminiClient {
     }
 
     private static final class ModelNotFound extends RuntimeException {
+        ModelNotFound(String reason) {
+            super(reason, null, false, false);
+        }
     }
 }

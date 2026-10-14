@@ -49,6 +49,8 @@ public class AssistantTools {
     public static final class Turn {
         final Map<String, JsonNode> cards = new LinkedHashMap<>();
         final List<JsonNode> actions = new ArrayList<>();
+        /** Ids and facts found this turn, handed back to the model on later turns (never shown). */
+        final Map<String, String> notes = new LinkedHashMap<>();
         final String path;
 
         Turn(String path) {
@@ -129,7 +131,7 @@ public class AssistantTools {
             return switch (name) {
                 case "search_catalog" -> searchCatalog(args, turn);
                 case "get_showtimes" -> showtimes(args, turn);
-                case "check_seats" -> checkSeats(args);
+                case "check_seats" -> checkSeats(args, turn);
                 case "hold_seats" -> holdSeats(args, turn);
                 case "open_page" -> openPage(args, turn);
                 case "get_my_bookings" -> myBookings(turn);
@@ -183,6 +185,12 @@ public class AssistantTools {
             }
         }
         if (cards.size() > 0 && cards.size() <= 8) putCards(turn, "titles", cards);
+        if (results.size() > 0 && results.size() <= 12) {
+            StringBuilder n = new StringBuilder();
+            results.forEach(r -> n.append(r.path("kind").asText()).append(" id ").append(r.path("id").asText())
+                    .append(" = ").append(r.path("title").asText()).append("; "));
+            turn.notes.put("titles", n.toString());
+        }
         ObjectNode out = json.createObjectNode();
         out.put("count", results.size()).set("results", results);
         if (results.isEmpty()) {
@@ -250,6 +258,12 @@ public class AssistantTools {
                     .put("path", "/book/" + s.id());
         }
         if (cards.size() > 0) putCards(turn, "showtimes", cards);
+        if (!shows.isEmpty()) {
+            turn.notes.put("showtimes", shows.stream().limit(15)
+                    .map(s -> "showtimeId " + s.id() + " = " + s.movieTitle() + ", " + s.showDate().format(DAY) + " "
+                            + s.startTime().format(TIME) + ", " + s.theaterName() + (s.format() == null ? "" : " " + s.format()))
+                    .collect(Collectors.joining("; ")));
+        }
         ObjectNode out = json.createObjectNode();
         out.put("count", shows.size()).set("showtimes", results);
         if (shows.size() > 25) out.put("note", "Only the first 25 are listed; narrow by date, venue or time of day.");
@@ -257,7 +271,7 @@ public class AssistantTools {
         return out;
     }
 
-    private JsonNode checkSeats(JsonNode a) {
+    private JsonNode checkSeats(JsonNode a, Turn turn) {
         long showtimeId = a.path("showtimeId").asLong();
         int qty = clamp(a.path("quantity").asInt(2));
         SeatMapDTO map = seatService.getSeatMap(showtimeId);
@@ -281,6 +295,9 @@ public class AssistantTools {
                     .put("suggestedClass", best.get(0).type().name())
                     .put("suggestedTotal", best.stream().map(SeatDTO::price).reduce(BigDecimal.ZERO, BigDecimal::add));
             out.put("together", adjacent(best));
+            turn.notes.put("quote", "quoted showtimeId " + showtimeId + " (" + out.path("title").asText() + ", "
+                    + out.path("when").asText() + "): seats " + out.path("suggestedSeats").asText() + ", "
+                    + out.path("suggestedClass").asText() + ", quantity " + qty + ", total " + out.path("suggestedTotal").asText());
         } else {
             out.put("note", "Not enough free seats" + (pref == null ? "" : " in " + pref.name()) + " for " + qty + ".");
         }
@@ -314,6 +331,8 @@ public class AssistantTools {
 
         BookingResponseDTO b = bookingService.hold(new BookingRequestDTO(showtimeId, chosen.stream().map(SeatDTO::id).toList()));
         putCards(turn, "booking", bookingCard(b));
+        turn.notes.put("held", "held bookingId " + b.id() + " (" + b.reference() + ") for showtimeId " + showtimeId
+                + ": seats " + b.seatLabels() + ", total " + b.totalAmount());
         action(turn, "/checkout/" + b.id(), "Opening secure checkout");
 
         ObjectNode out = json.createObjectNode();

@@ -142,6 +142,21 @@ public class PaymentService {
                     .build());
         });
 
+        // One line item per snack, e.g. "2 x Large popcorn".
+        for (BookingSnack snack : booking.getSnacks()) {
+            params.addLineItem(SessionCreateParams.LineItem.builder()
+                    .setQuantity((long) snack.getQuantity())
+                    .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                            .setCurrency(currency)
+                            .setUnitAmount(stripe.toMinorUnits(snack.getUnitPrice(), currency))
+                            .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                    .setName(snack.getName())
+                                    .setDescription("Collect at the snack counter with your ticket")
+                                    .build())
+                            .build())
+                    .build());
+        }
+
         if (booking.getPromoCode() != null && booking.getDiscountAmount() != null && booking.getDiscountAmount().signum() > 0) {
             String coupon = stripe.createOneTimeCoupon("Promo " + booking.getPromoCode(),
                     stripe.toMinorUnits(booking.getDiscountAmount(), currency), currency);

@@ -148,6 +148,10 @@ export default function BookingsList() {
             <Row label="Show" value={`${shortDate(detail.showtime.showDate)}, ${time12(detail.showtime.startTime)}`} />
             <Row label="Screen" value={`${detail.showtime.theaterName} · ${detail.showtime.screenName}`} />
             <Row label="Seats" value={detail.seats.map((s) => `${s.label} (${s.type.toLowerCase()})`).join(", ")} wide />
+            {detail.snacks?.length > 0 && (
+              <Row label="Snacks" value={`${detail.snacks.map((s) => `${s.quantity} × ${s.name}`).join(", ")} (${money(detail.snacksAmount, detail.currency)})`} wide />
+            )}
+            {detail.reminderEmailedAt && <Row label="Reminder sent" value={dateTime(detail.reminderEmailedAt)} />}
             <Row label="Created" value={dateTime(detail.createdAt)} />
             <Row label="Confirmed" value={dateTime(detail.confirmedAt)} />
             {detail.cancelledAt && <Row label="Cancelled" value={dateTime(detail.cancelledAt)} />}

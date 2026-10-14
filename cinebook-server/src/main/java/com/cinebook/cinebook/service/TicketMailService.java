@@ -213,6 +213,7 @@ public class TicketMailService {
                 + String.format(row, st.isEvent() ? "Venue" : "Cinema", esc(st.getScreen().getTheater().getName()))
                 + String.format(row, st.isEvent() ? "Hall" : "Screen", esc(st.getScreen().getScreenName()))
                 + String.format(row, "Seats", esc(b.getSeatLabels()))
+                + (b.getSnacks().isEmpty() ? "" : String.format(row, "Snacks", esc(TicketPdfService.snackSummary(b))))
                 + (b.getPromoCode() != null && b.getDiscountAmount() != null
                     ? String.format(row, "Promo " + esc(b.getPromoCode()), "-" + esc(money(b.getDiscountAmount(), b.getCurrency())))
                     : "")
