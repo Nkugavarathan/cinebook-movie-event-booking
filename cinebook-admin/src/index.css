@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* dark:... utilities apply only when <html data-theme="dark"> */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-bg: #f5f6fa;
   --color-surface: #ffffff;

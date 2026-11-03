@@ -20,7 +20,7 @@ const LANGUAGES = [
 
 const SUGGESTIONS = [
   { text: "What's showing tonight?", icon: Clapperboard },
-  { text: "Book 2 tickets for the next show of Dune", icon: Ticket },
+  // { text: "Book 2 tickets for the next show of Dune", icon: Ticket },
   { text: "Any concerts this weekend?", icon: Music },
   { text: "Show my upcoming tickets", icon: TicketCheck },
 ]

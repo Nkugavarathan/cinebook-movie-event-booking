@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { BadgePercent, Building2, ChartColumn, MessageSquareText, Popcorn, ScanLine, CalendarClock, Clapperboard, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
+import { BadgePercent, Building2, ChartColumn, MessageSquareText, Popcorn, ScanLine, CalendarClock, Film, LayoutDashboard, MonitorPlay, PartyPopper, Ticket, Users, X } from "lucide-react"
 
 const NAV = [
   ["/admin/dashboard", "Dashboard", LayoutDashboard],
@@ -32,13 +32,8 @@ export default function AdminSidebar({ open, onClose }) {
       >
         <div className="flex h-16 items-center justify-between px-5">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-linear-to-br from-brand to-amber-500">
-              <Clapperboard size={18} />
-            </span>
-            <div>
-              <p className="font-display text-lg font-bold leading-none">CineBook</p>
-              <p className="mt-0.5 text-[11px] uppercase tracking-widest text-white/40">Admin</p>
-            </div>
+            <img src={`${import.meta.env.BASE_URL}logo-dark.png`} alt="CineBook" className="h-8 w-auto" />
+            <p className="text-[11px] uppercase tracking-widest text-white/40">Admin</p>
           </div>
           <button className="rounded-lg p-1.5 text-white/50 hover:text-white lg:hidden" onClick={onClose} aria-label="Close menu">
             <X size={20} />
