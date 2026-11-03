@@ -154,18 +154,28 @@ public class TicketPdfService {
         }
     }
 
+    /** White band with the full-colour logo, underlined in the brand colour. */
     private PdfPTable header(Booking b) {
         PdfPTable band = new PdfPTable(2);
         band.setWidthPercentage(118); // bleed past the side margins
-        PdfPCell brand = new PdfPCell(text("CineBook", 16, Font.BOLD, Color.WHITE));
-        PdfPCell kind = new PdfPCell(text("E-TICKET", 9, Font.BOLD, new Color(255, 255, 255, 210)));
+        Image logo = logo();
+        PdfPCell brand;
+        if (logo != null) {
+            logo.scaleToFit(140, 30);
+            brand = new PdfPCell(logo, false);
+        } else {
+            brand = new PdfPCell(text("CineBook", 16, Font.BOLD, BRAND));
+        }
+        brand.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        PdfPCell kind = new PdfPCell(text("E-TICKET", 9, Font.BOLD, BRAND));
         kind.setHorizontalAlignment(Element.ALIGN_RIGHT);
         kind.setVerticalAlignment(Element.ALIGN_MIDDLE);
         for (PdfPCell c : new PdfPCell[]{brand, kind}) {
-            c.setBackgroundColor(BRAND);
-            c.setBorder(Rectangle.NO_BORDER);
-            c.setPaddingTop(16);
-            c.setPaddingBottom(16);
+            c.setBorder(Rectangle.BOTTOM);
+            c.setBorderColorBottom(BRAND);
+            c.setBorderWidthBottom(4);
+            c.setPaddingTop(18);
+            c.setPaddingBottom(14);
         }
         brand.setPaddingLeft(36);
         kind.setPaddingRight(36);
@@ -208,6 +218,16 @@ public class TicketPdfService {
     private static java.awt.image.BufferedImage qrImage(String value) throws Exception {
         BitMatrix m = new QRCodeWriter().encode(value, BarcodeFormat.QR_CODE, 400, 400, Map.of(EncodeHintType.MARGIN, 1));
         return MatrixToImageWriter.toBufferedImage(m);
+    }
+
+    /** The logo from the classpath, or null so the ticket falls back to the text name. */
+    private static Image logo() {
+        try (InputStream in = TicketPdfService.class.getResourceAsStream("/brand/logo.png")) {
+            return in == null ? null : Image.getInstance(in.readAllBytes());
+        } catch (Exception e) {
+            log.warn("Ticket logo not loaded: {}", e.getMessage());
+            return null;
+        }
     }
 
     /** Best effort: a missing or slow poster never blocks the ticket. */

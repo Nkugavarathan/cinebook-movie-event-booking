@@ -94,7 +94,7 @@ export default function HowItWorks() {
 
         {STEPS.map(({ icon: Icon, title, text, preview: Preview }, i) => (
           <div key={title} className="group relative flex flex-col items-center text-center">
-            <span className="relative z-10 grid h-12 w-12 place-items-center rounded-full bg-linear-to-br from-brand to-amber-500 font-display text-lg font-bold text-white shadow-lg shadow-brand/40 ring-8 ring-bg transition group-hover:scale-110">
+            <span className="relative z-10 grid h-12 w-12 place-items-center rounded-full bg-linear-to-br from-brand to-brand-600 font-display text-lg font-bold text-white shadow-lg shadow-brand/40 ring-8 ring-bg transition group-hover:scale-110">
               {i + 1}
             </span>
 
