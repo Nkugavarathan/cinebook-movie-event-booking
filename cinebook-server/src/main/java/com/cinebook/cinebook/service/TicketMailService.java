@@ -92,6 +92,7 @@ public class TicketMailService {
         helper.setTo(new InternetAddress(mail.to, mail.name));
         helper.setSubject(mail.subject);
         helper.setText(plain(mail), mail.html);
+        EmailService.addLogo(helper);
         helper.addAttachment("CineBook-" + mail.reference + ".pdf", new ByteArrayResource(mail.pdf), "application/pdf");
         mailSender.send(msg);
 
@@ -135,6 +136,7 @@ public class TicketMailService {
         helper.setSubject(mail.subject);
         helper.setText("Hi " + mail.name + ",\n\nBooking " + mail.reference + " has been cancelled and refunded to the card "
                 + "you paid with. Banks usually take 5-10 business days to show it.\n\nCineBook", mail.html);
+        EmailService.addLogo(helper);
         mailSender.send(msg);
 
         tx.executeWithoutResult(status -> bookingRepo.findById(bookingId)
@@ -168,7 +170,7 @@ public class TicketMailService {
         return """
                 <div style="background:#f4f4f8;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
                   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
-                    <div style="background:#0284c7;padding:18px 24px;color:#ffffff;font-size:20px;font-weight:bold">CineBook &middot; Refund confirmed</div>
+                    %s
                     <div style="padding:24px">
                       <p style="margin:0 0 4px;color:#15151f;font-size:16px">Hi %s,</p>
                       <p style="margin:0 0 20px;color:#4b4b5c;font-size:14px">%s</p>
@@ -185,7 +187,7 @@ public class TicketMailService {
                     </div>
                   </div>
                 </div>
-                """.formatted(esc(name), esc(reason), esc(money(refunded, b.getCurrency())), rows, clientUrl);
+                """.formatted(EmailService.header("Refund confirmed", "#0284c7"), esc(name), esc(reason), esc(money(refunded, b.getCurrency())), rows, clientUrl);
     }
 
     private static String money(java.math.BigDecimal amount, String currency) {
@@ -225,7 +227,7 @@ public class TicketMailService {
         return """
                 <div style="background:#f4f4f8;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
                   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
-                    <div style="background:#e11d48;padding:18px 24px;color:#ffffff;font-size:20px;font-weight:bold">CineBook</div>
+                    %s
                     <div style="padding:24px">
                       <p style="margin:0 0 4px;color:#15151f;font-size:16px">Hi %s,</p>
                       <p style="margin:0 0 20px;color:#4b4b5c;font-size:14px">Your booking is confirmed. Your ticket is attached as a PDF - show its QR code at the entrance.</p>
@@ -244,7 +246,7 @@ public class TicketMailService {
                     </div>
                   </div>
                 </div>
-                """.formatted(esc(name), poster, st.isEvent() ? "EVENT" : "MOVIE", esc(st.getTitle()), rows, clientUrl, b.getId(), refundPolicy.cutoffHours());
+                """.formatted(EmailService.header("E-ticket", "#e11d48"), esc(name), poster, st.isEvent() ? "EVENT" : "MOVIE", esc(st.getTitle()), rows, clientUrl, b.getId(), refundPolicy.cutoffHours());
     }
 
     private static String esc(String s) {

@@ -1,10 +1,12 @@
 package com.cinebook.cinebook.service;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -43,7 +45,28 @@ public class EmailService {
         helper.setTo(new InternetAddress(to, name));
         helper.setSubject(subject);
         helper.setText(plain, html);
+        addLogo(helper);
         mailSender.send(msg);
+    }
+
+    /** Content id of the logo embedded in every email; the header's img points at it. */
+    public static final String LOGO_CID = "cinebook-logo";
+
+    /** Embeds the logo so it shows without the mail client fetching anything. Call after setText. */
+    public static void addLogo(MimeMessageHelper helper) throws MessagingException {
+        helper.addInline(LOGO_CID, new ClassPathResource("brand/logo.png"), "image/png");
+    }
+
+    /** White band with the logo, an optional label on the right, underlined in the accent colour. */
+    public static String header(String label, String accent) {
+        return """
+                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="border-bottom:4px solid %s">
+                  <tr>
+                    <td style="padding:18px 24px"><img src="cid:%s" alt="CineBook" width="139" height="32" style="display:block;border:0;width:139px;height:32px;color:#e11d48;font-size:20px;font-weight:bold"></td>
+                    <td align="right" style="padding:18px 24px;color:%s;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase">%s</td>
+                  </tr>
+                </table>
+                """.formatted(accent, LOGO_CID, accent, esc(label));
     }
 
     /** Sends on a background thread so the HTTP request answers at once (and takes the same time either way). */
@@ -69,11 +92,11 @@ public class EmailService {
         return """
                 <div style="background:#f4f4f8;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
                   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
-                    <div style="background:#e11d48;padding:18px 24px;color:#ffffff;font-size:20px;font-weight:bold">CineBook &middot; %s</div>
+                    %s
                     <div style="padding:24px">%s%s%s</div>
                   </div>
                 </div>
-                """.formatted(esc(heading), bodyHtml, button, footer);
+                """.formatted(header(heading, "#e11d48"), bodyHtml, button, footer);
     }
 
     public static String esc(String s) {
