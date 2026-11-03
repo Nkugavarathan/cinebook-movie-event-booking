@@ -1,17 +1,15 @@
 import { Link } from "react-router-dom"
-import { Clapperboard, Lock, ShieldCheck, Ticket } from "lucide-react"
+import { Lock, ShieldCheck, Ticket } from "lucide-react"
 
 export default function Footer() {
   return (
     <footer className="mt-20 border-t border-line bg-surface/50">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
         <div className="md:col-span-2">
-          <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-linear-to-br from-brand to-amber-500">
-              <Clapperboard size={16} className="text-white" />
-            </span>
-            <span className="font-display text-lg font-bold">CineBook</span>
-          </div>
+          <Link to="/" className="inline-flex" aria-label="CineBook home">
+            <img src="/logo-dark.png" alt="CineBook" className="h-10 w-auto light:hidden" />
+            <img src="/logo-light.png" alt="CineBook" className="hidden h-10 w-auto light:block" />
+          </Link>
           <p className="mt-3 max-w-sm text-sm text-muted">
             Pick your seat, pay securely and walk in with a QR ticket. Your next movie night is a few taps away.
           </p>

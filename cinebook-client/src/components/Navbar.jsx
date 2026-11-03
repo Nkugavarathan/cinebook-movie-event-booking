@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
-import { Clapperboard, LogOut, Menu, Ticket, User, X } from "lucide-react"
+import { LogOut, Menu, Ticket, User, X } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import ThemeToggle from "./ThemeToggle"
 
@@ -30,13 +30,9 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-line/60 bg-bg/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-linear-to-br from-brand to-amber-500 shadow-lg shadow-brand/30">
-            <Clapperboard size={18} className="text-white" />
-          </span>
-          <span className="font-display text-xl font-bold tracking-tight">
-            Cine<span className="text-brand">Book</span>
-          </span>
+        <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label="CineBook home">
+          <img src="/logo-dark.png" alt="CineBook" className="h-9 w-auto light:hidden" />
+          <img src="/logo-light.png" alt="CineBook" className="hidden h-9 w-auto light:block" />
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">
