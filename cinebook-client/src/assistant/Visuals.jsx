@@ -39,7 +39,7 @@ export function AssistantAvatar({ size = 40, mode = "idle", levelRef }) {
   return (
     <span className={`assist-avatar assist-avatar-${mode} relative inline-grid shrink-0 place-items-center`} style={{ width: size, height: size }} aria-hidden="true">
       <span ref={ring} className="assist-avatar-ring absolute -inset-[3px] rounded-full border-2 border-brand" />
-      <span className="relative grid h-full w-full place-items-center rounded-full bg-linear-to-br from-brand to-amber-500 text-white shadow-lg shadow-brand/25">
+      <span className="relative grid h-full w-full place-items-center rounded-full bg-linear-to-br from-brand to-brand-600 text-white shadow-lg shadow-brand/25">
         {mode === "speaking" ? (
           <span className="flex items-center gap-[12%]" style={{ height: icon, width: icon }}>
             {[0, 1, 2, 3].map((i) => (
