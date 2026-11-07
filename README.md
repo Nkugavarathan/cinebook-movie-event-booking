@@ -20,6 +20,10 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 
 ![CineBook home page with the featured movie](cinebook-client/public/screenshots/home.png)
 
+**AI booking assistant**: ask in plain words, get live showtimes and pick one right in the chat
+
+<img src="cinebook-client/public/screenshots/ai-assistant.png" alt="AI booking assistant listing showtimes for Scene" width="420">
+
 | Showtimes by date and cinema | Live seat map with seat tiers |
 |---|---|
 | ![Showtimes for Scene at Eros Cinema](cinebook-client/public/screenshots/showtimes.png) | ![Seat selection with two seats picked](cinebook-client/public/screenshots/seat-selection.png) |
