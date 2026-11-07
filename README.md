@@ -10,6 +10,30 @@ CineBook is a full-stack cinema and live-events booking system: customers browse
 
 ---
 
+## Demo video
+
+▶️ Full walkthrough on YouTube: _coming soon_
+
+## Screenshots
+
+**Home page**
+
+![CineBook home page with the featured movie](cinebook-client/public/screenshots/home.png)
+
+| Showtimes by date and cinema | Live seat map with seat tiers |
+|---|---|
+| ![Showtimes for Scene at Eros Cinema](cinebook-client/public/screenshots/showtimes.png) | ![Seat selection with two seats picked](cinebook-client/public/screenshots/seat-selection.png) |
+
+| QR e-ticket | Admin dashboard |
+|---|---|
+| ![Confirmed e-ticket with QR code](cinebook-client/public/screenshots/e-ticket.png) | ![Admin dashboard with revenue and top sellers](cinebook-client/public/screenshots/admin-dashboard.png) |
+
+| Seat layout designer | QR check-in at the door |
+|---|---|
+| ![Admin seat layout designer](cinebook-client/public/screenshots/admin-seat-layout.png) | ![Admin ticket check-in with camera scanner](cinebook-client/public/screenshots/admin-check-in.png) |
+
+---
+
 ## Features
 
 **Customers**
