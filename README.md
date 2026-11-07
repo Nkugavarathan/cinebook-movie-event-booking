@@ -2,6 +2,12 @@
 
 CineBook is a full-stack cinema and live-events booking system: customers browse movies and events (concerts, comedy, theatre...), pick seats on a live seat map, pay with **Stripe Checkout** and get a QR e-ticket. Admins manage movies, theaters, screen seat layouts, showtimes and bookings (including refunds) from a separate dashboard.
 
+## Demo Video
+
+[![CineBook demo video](https://img.youtube.com/vi/LITXaPwDpKU/hqdefault.jpg)](https://www.youtube.com/watch?v=LITXaPwDpKU)
+
+Watch the full walkthrough on YouTube: https://www.youtube.com/watch?v=LITXaPwDpKU
+
 | App | Path | URL | Stack |
 |---|---|---|---|
 | API server | `cinebook-server` | http://localhost:8080 | Java 17, Spring Boot 3.2, Spring Security (JWT), JPA, MySQL/MariaDB, Stripe Java SDK |
